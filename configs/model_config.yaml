@@ -1,0 +1,36 @@
+# TabNet Model Configuration
+
+# Data settings
+data:
+  train_path: "data/raw/instructions.csv"
+  test_size: 0.2
+  random_seed: 42
+
+# Feature extraction settings
+features:
+  method: "char_frequency"  # Options: char_frequency, word_embeddings, tfidf
+  max_length: 100
+
+# TabNet hyperparameters
+model:
+  n_d: 8                    # Width of the decision prediction layer
+  n_a: 8                    # Width of the attention embedding
+  n_steps: 3                # Number of steps in the architecture
+  gamma: 1.3                # Coefficient for feature reusage
+  lambda_sparse: 0.001      # Sparsity regularization
+  mask_type: "entmax"       # Mask function (sparsemax or entmax)
+
+# Training settings
+training:
+  max_epochs: 50
+  patience: 10              # Early stopping patience
+  batch_size: 64
+  virtual_batch_size: 32
+  learning_rate: 0.02
+  scheduler_step_size: 10
+  scheduler_gamma: 0.9
+
+# Output settings
+output:
+  model_path: "models/tabnet_instruction_model"
+  results_path: "results/"
