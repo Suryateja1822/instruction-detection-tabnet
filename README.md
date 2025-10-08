@@ -2,6 +2,12 @@
 
 This project implements an instruction detection system using TabNet, a deep learning architecture for tabular data. The system classifies instructions into different categories such as device control, queries, reminders, and more.
 
+## 🌐 Live Demo
+
+**Try the app**: [Coming Soon - Deploy on Streamlit Cloud]
+
+📖 **Deployment Guide**: See [DEPLOYMENT.md](DEPLOYMENT.md) for step-by-step instructions
+
 ## 🎯 Features
 
 - **TabNet Architecture**: Utilizes TabNet for interpretable deep learning on tabular features
