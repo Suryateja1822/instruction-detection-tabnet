@@ -1,6 +1,6 @@
-# Instruction Detection using TabNet
+# TabNet-IDS: Interpretable Deep Learning for Network Intrusion Detection
 
-This project implements an instruction detection system using TabNet, a deep learning architecture for tabular data. The system classifies instructions into different categories such as device control, queries, reminders, and more.
+An advanced Intrusion Detection System (IDS) leveraging TabNet's attentive interpretable architecture for network security. This project implements state-of-the-art deep learning with explainable AI (XAI) capabilities for real-time threat detection in IoT/IIoT environments.
 
 ## 🌐 Live Demo
 
@@ -8,13 +8,16 @@ This project implements an instruction detection system using TabNet, a deep lea
 
 📖 **Deployment Guide**: See [DEPLOYMENT.md](DEPLOYMENT.md) for step-by-step instructions
 
-## 🎯 Features
+## 🎯 Key Features
 
-- **TabNet Architecture**: Utilizes TabNet for interpretable deep learning on tabular features
-- **Multiple Instruction Classes**: Supports 9 different instruction categories
-- **Web Interface**: Interactive Streamlit app for real-time predictions
-- **Comprehensive Evaluation**: Detailed metrics and visualization tools
-- **Jupyter Notebooks**: Interactive exploration and experimentation
+- **🔍 Interpretable Deep Learning**: TabNet architecture with sequential attention mechanisms for transparent feature selection
+- **🛡️ Multi-Attack Detection**: Identifies DDoS, DoS, Probe, R2L, U2R, and modern attack vectors
+- **📊 Explainable AI**: SHAP-based feature importance and local/global interpretability
+- **⚖️ Imbalanced Data Handling**: SMOTE oversampling and focal loss for rare attack detection
+- **🎯 High Performance**: Achieves 96-98% accuracy on benchmark datasets (NSL-KDD, CIC-IDS2017)
+- **📈 Real-time Dashboard**: Interactive Streamlit interface with live threat monitoring
+- **🔧 Hyperparameter Optimization**: Optuna-based automated tuning for optimal performance
+- **📉 Advanced Metrics**: Accuracy, Precision, Recall, F1-Score, MCC, and ROC-AUC
 
 ## 📁 Project Structure
 

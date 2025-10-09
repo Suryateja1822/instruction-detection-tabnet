@@ -1,0 +1,48 @@
+========================================
+  PUSH TO GITHUB - COPY THESE COMMANDS
+========================================
+
+STEP 1: Create GitHub Repository
+---------------------------------
+1. Go to: https://github.com/new
+2. Name: tabnet-ids-executive
+3. Description: AI-Powered Network Intrusion Detection System
+4. Public: YES
+5. Click "Create repository"
+
+
+STEP 2: Run These Commands
+---------------------------
+cd "c:\3rd sem\Project\Intruction detection using tabnet\CascadeProjects\windsurf-project"
+
+git init
+
+git add .
+
+git commit -m "feat: TabNet-IDS Executive Dashboard"
+
+git remote add origin https://github.com/YOUR_USERNAME/tabnet-ids-executive.git
+
+git branch -M main
+
+git push -u origin main
+
+
+STEP 3: Deploy to Streamlit
+----------------------------
+1. Go to: https://streamlit.io/cloud
+2. Sign in with GitHub
+3. Click "New app"
+4. Repository: YOUR_USERNAME/tabnet-ids-executive
+5. Branch: main
+6. Main file: app_with_upload.py
+7. Click "Deploy!"
+
+
+DONE! Your app will be live at:
+https://YOUR_USERNAME-tabnet-ids-executive.streamlit.app
+
+
+========================================
+REMEMBER: Replace YOUR_USERNAME with your actual GitHub username!
+========================================

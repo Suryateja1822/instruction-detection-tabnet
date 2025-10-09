@@ -92,42 +92,179 @@ Then redeploy from Streamlit Cloud dashboard.
 
 ## 📊 Monitor Your App
 
-After deployment:
-1. Go to Streamlit Cloud dashboard
-2. Click on your app
-3. View:
-   - **Logs**: Real-time app logs
-   - **Analytics**: Usage statistics
-   - **Settings**: App configuration
-
----
-
-## 🔄 Update Your Deployed App
-
-To update after deployment:
-```bash
-# Make changes to your code
 git add .
-git commit -m "Update features"
-git push
+
+# 4. Commit
+git commit -m "feat: TabNet-IDS Executive Dashboard"
+
+# 5. Create repo on GitHub first at: https://github.com/new
+#    Name it: tabnet-ids-executive
+
+# 6. Connect and push (replace YOUR_USERNAME)
+git remote add origin https://github.com/YOUR_USERNAME/tabnet-ids-executive.git
+git branch -M main
+git push -u origin main
 ```
 
-Streamlit Cloud will **automatically redeploy** your app!
+---
+
+## 🌐 Step 2: Deploy to Streamlit Cloud (FREE!)
+
+### **Quick Deploy:**
+1. **Go to:** https://streamlit.io/cloud
+2. **Sign in** with GitHub
+3. Click **"New app"**
+4. **Select:**
+   - Repository: `YOUR_USERNAME/tabnet-ids-executive`
+   - Branch: `main`
+   - Main file: `app_with_upload.py` (for upload version)
+     OR `app_executive.py` (for real-time version)
+5. Click **"Deploy!"**
+
+### **Wait 2-5 minutes...**
+Your app will be live at:
+```
+https://YOUR_USERNAME-tabnet-ids-executive.streamlit.app
+```
 
 ---
 
-## 🎯 Quick Links
+## 🎯 Step 3: Test and Share!
 
-- **Streamlit Cloud**: https://share.streamlit.io/
-- **Your GitHub Repo**: https://github.com/Suryateja1822/instruction-detection-tabnet
-- **Streamlit Docs**: https://docs.streamlit.io/
-- **Full Deployment Guide**: See DEPLOYMENT.md
+### **Test Your Deployed App:**
+1. Open the live URL
+2. Upload `sample_upload_data.csv`
+3. Click "Analyze Data"
+4. See the results!
+
+### **Share Your Project:**
+- 📱 LinkedIn
+- 🐦 Twitter/X
+- 📝 Reddit
+- 💼 Portfolio
+- 📧 Email to friends
 
 ---
 
-## ✨ You're Ready!
+## 🎨 Which Version to Deploy?
 
-Everything is set up. Just follow the steps above and your app will be live in 5 minutes! 🚀
+### **Option 1: Upload Version** (Recommended for most users)
+- **File:** `app_with_upload.py`
+- **Best for:** Users with CSV data
+- **Features:** File upload, analysis, download reports
+
+### **Option 2: Executive Version** (Best for demos)
+- **File:** `app_executive.py`
+- **Best for:** Live demonstrations
+- **Features:** Real-time monitoring, IP blocking, alerts
+
+### **Option 3: Deploy Both!**
+Create 2 Streamlit apps:
+1. Main app: `app_with_upload.py`
+2. Demo app: `app_executive.py`
+
+---
+
+## 🔧 Troubleshooting
+
+### ❌ "Repository not found"
+**Fix:** Create the repo on GitHub first at https://github.com/new
+
+### ❌ "Permission denied"
+**Fix:** Check your GitHub credentials
+```powershell
+git config --global user.name "Your Name"
+git config --global user.email "your.email@example.com"
+```
+
+### ❌ "Model file too large"
+**Fix:** Model will auto-train on first run (takes 2-5 min)
+
+### ❌ "Module not found" on Streamlit
+**Fix:** All dependencies are in `requirements.txt` - should work automatically
+
+---
+
+## 📊 What Gets Deployed?
+
+### **Included:**
+- ✅ All Python files
+- ✅ Requirements & config
+- ✅ Documentation
+- ✅ Sample CSV data
+- ✅ Source code
+
+### **Auto-Generated:**
+- ✅ Model trains on first run
+- ✅ Sample data created
+- ✅ Results folder
+
+---
+
+## 🎉 Success Checklist
+
+- [ ] GitHub repository created
+- [ ] Code pushed successfully
+- [ ] Streamlit Cloud account created
+- [ ] App deployed
+- [ ] Live URL tested
+- [ ] Sample CSV uploaded and analyzed
+- [ ] Results look good
+- [ ] Shared with others!
+
+---
+
+## 💡 Pro Tips
+
+### **Make Your Repo Stand Out:**
+1. Add a great README with screenshots
+2. Add topics: `machine-learning`, `cybersecurity`, `tabnet`
+3. Create a demo GIF
+4. Write a blog post about it
+
+### **Optimize for Deployment:**
+- Model auto-trains (no large files to upload)
+- Caching enabled for fast performance
+- Error handling for smooth UX
+
+---
+
+## 🚀 Ready? Let's Deploy!
+
+### **Easiest Way:**
+```powershell
+.\deploy.ps1
+```
+
+### **Manual Way:**
+See **GITHUB_PUSH_COMMANDS.md** for detailed steps
+
+### **Full Guide:**
+See **DEPLOYMENT_GUIDE.md** for everything
+
+---
+
+## 🌐 Your App Will Be Live At:
+
+```
+https://YOUR_USERNAME-tabnet-ids-executive.streamlit.app
+```
+
+**Share this URL and impress everyone! 🎊🛡️✨**
+
+---
+
+## 📞 Need Help?
+
+Check these files:
+- **GITHUB_PUSH_COMMANDS.md** - Git commands
+- **DEPLOYMENT_GUIDE.md** - Complete deployment guide
+- **HOW TO USE.md** - How to use the app
+- **README.md** - Project overview
+
+---
+
+**🎯 Your AI-powered Intrusion Detection System is ready to go live! Deploy now! 🚀**🚀
 
 **Questions?** Check DEPLOYMENT.md for detailed guides and troubleshooting.
 

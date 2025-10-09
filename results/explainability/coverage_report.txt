@@ -1,0 +1,18 @@
+
+Feature Importance Coverage Analysis
+=====================================
+Top 10 features explain: 79.00% of variance
+Top 20 features explain: 97.36% of variance
+
+Most Important Features:
+          feature  importance
+num_failed_logins    0.164147
+protocol_type_tcp    0.149154
+         duration    0.106985
+          flag_S0    0.086757
+    same_srv_rate    0.065288
+protocol_type_udp    0.055117
+        flag_RSTR    0.055001
+  num_compromised    0.042854
+        logged_in    0.032584
+      rerror_rate    0.032123

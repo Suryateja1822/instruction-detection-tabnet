@@ -1,43 +1,99 @@
+"""
+TabNet-IDS Training Module
+Implements training with focal loss, SMOTE, and advanced optimization
+"""
+
 import os
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, classification_report
-from pytorch_tabnet.tab_model import TabNetClassifier
 import torch
+import torch.nn as nn
+from pytorch_tabnet.tab_model import TabNetClassifier
+from sklearn.metrics import accuracy_score, classification_report, matthews_corrcoef
+from preprocessing import IDSPreprocessor
+from explainability import TabNetExplainer
+import yaml
+from datetime import datetime
+import warnings
+warnings.filterwarnings('ignore')
 
-def load_data(data_path):
+
+class FocalLoss(nn.Module):
     """
-    Load and preprocess the instruction dataset
+    Focal Loss for handling class imbalance
+    Focuses on hard-to-classify examples
     """
-    # TODO: Replace with your actual data loading logic
-    # This is a placeholder example
-    data = pd.read_csv(data_path)
+    def __init__(self, alpha=1, gamma=2):
+        super(FocalLoss, self).__init__()
+        self.alpha = alpha
+        self.gamma = gamma
+        
+    def forward(self, inputs, targets):
+        ce_loss = nn.CrossEntropyLoss(reduction='none')(inputs, targets)
+        pt = torch.exp(-ce_loss)
+        focal_loss = self.alpha * (1 - pt) ** self.gamma * ce_loss
+        return focal_loss.mean()
+
+def train(
+    data_path: str = "data/raw/sample_network_data.csv",
+    dataset_type: str = "CIC-IDS2017",
+    binary_classification: bool = False,
+    use_focal_loss: bool = True,
+    apply_smote: bool = True,
+    config_path: str = "configs/model_config.yaml"
+):
+    """
+    Train TabNet-IDS model
     
-    # Assuming the data has 'text' and 'label' columns
-    X = data['text'].values
-    y = data['label'].values
-    
-    return X, y
-
-def preprocess_text(texts, max_length=100):
+    Args:
+        data_path: Path to training data
+        dataset_type: Type of dataset
+        binary_classification: Binary or multi-class
+        use_focal_loss: Use focal loss for imbalanced data
+        apply_smote: Apply SMOTE oversampling
+        config_path: Path to configuration file
     """
-    Simple text preprocessing
-    """
-    # TODO: Implement your text preprocessing here
-    # This is a placeholder - you might want to use more sophisticated preprocessing
-    processed_texts = [str(text).lower() for text in texts]
-    return processed_texts
-
-def train():
     # Set random seed for reproducibility
     np.random.seed(42)
     torch.manual_seed(42)
     
-    # Load and preprocess data
-    data_path = "data/raw/instructions.csv"  # Update this path
-    print(f"Loading data from {data_path}...")
-    X, y = load_data(data_path)
+    print("="*70)
+    print("TabNet-IDS Training")
+    print("="*70)
+    
+    # Load configuration
+    if os.path.exists(config_path):
+        with open(config_path, 'r') as f:
+            config = yaml.safe_load(f)
+    else:
+        config = {
+            'model': {
+                'n_d': 64,
+                'n_a': 64,
+                'n_steps': 5,
+                'gamma': 1.5,
+                'lambda_sparse': 0.001,
+                'mask_type': 'entmax'
+            },
+            'training': {
+                'max_epochs': 100,
+                'patience': 20,
+                'batch_size': 1024,
+                'virtual_batch_size': 128,
+                'learning_rate': 0.02
+            }
+        }
+    
+    # Initialize preprocessor
+    print(f"\n1. Preprocessing {dataset_type} dataset...")
+    preprocessor = IDSPreprocessor(dataset_type=dataset_type)
+    
+    # Preprocess data
+    X_train, X_test, y_train, y_test = preprocessor.preprocess_pipeline(
+        data_path=data_path,
+        binary_classification=binary_classification,
+        apply_smote=apply_smote
+    )
     print(f"Loaded {len(X)} samples")
     print(f"Unique classes: {np.unique(y)}")
     

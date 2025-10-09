@@ -1,0 +1,12 @@
+accuracy: 0.355
+apply_smote: true
+binary_classification: false
+data_path: data/raw/sample_network_data.csv
+dataset: CIC-IDS2017
+mcc: 0.0577608472845871
+n_classes: 5
+n_features: 25
+test_samples: 200
+timestamp: '2025-10-09 14:14:51'
+train_samples: 2815
+use_focal_loss: false
