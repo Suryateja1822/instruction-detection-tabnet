@@ -32,6 +32,22 @@ st.markdown("""
         font-family: 'Rajdhani', sans-serif;
     }
     
+    /* Hide sidebar completely or style it dark */
+    section[data-testid="stSidebar"] {
+        background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+        border-right: 1px solid rgba(102, 126, 234, 0.2);
+    }
+    
+    section[data-testid="stSidebar"] > div {
+        background: transparent;
+    }
+    
+    /* Style sidebar text */
+    section[data-testid="stSidebar"] * {
+        color: #e0e7ff !important;
+    }
+    
+    /* Hide default Streamlit elements */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
