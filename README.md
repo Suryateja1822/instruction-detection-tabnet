@@ -4,9 +4,16 @@ An advanced Intrusion Detection System (IDS) leveraging TabNet's attentive inter
 
 ## 🌐 Live Demo
 
-**Try the app**: [Coming Soon - Deploy on Streamlit Cloud]
+**Try the app**: https://instruction-detection-tabnet.streamlit.app
 
 📖 **Deployment Guide**: See [DEPLOYMENT.md](DEPLOYMENT.md) for step-by-step instructions
+
+### 🆕 Latest Version Features:
+- 📤 **File Upload**: Upload your own CSV data for analysis
+- 🎨 **Premium UI**: Executive-level dark theme dashboard
+- 📊 **Advanced Visualizations**: Interactive Plotly charts
+- 🔍 **Real-time Analysis**: Instant threat detection and classification
+- 📈 **Detailed Reports**: Comprehensive analysis results
 
 ## 🎯 Key Features
 
