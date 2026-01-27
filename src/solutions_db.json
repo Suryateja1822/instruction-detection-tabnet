@@ -1,0 +1,92 @@
+{
+  "sql_injection": {
+    "name": "SQL Injection",
+    "description": "An attacker can execute malicious SQL statements that control a web application's database.",
+    "severity": "Critical",
+    "solutions": [
+      "Use parameterized queries (prepared statements)",
+      "Implement input validation and sanitization",
+      "Apply the principle of least privilege for database accounts",
+      "Use stored procedures",
+      "Implement Web Application Firewall (WAF) rules"
+    ],
+    "mitigation_steps": [
+      "Immediately audit and clean the database",
+      "Update database permissions",
+      "Monitor for suspicious database activities",
+      "Update all database management systems to the latest version"
+    ]
+  },
+  "ddos": {
+    "name": "DDoS Attack",
+    "description": "Distributed Denial of Service attack that overwhelms the target with traffic from multiple sources.",
+    "severity": "High",
+    "solutions": [
+      "Implement rate limiting and throttling",
+      "Use a Content Delivery Network (CDN)",
+      "Configure web application firewalls (WAF)",
+      "Enable DDoS protection services (e.g., Cloudflare, AWS Shield)",
+      "Implement IP blacklisting/whitelisting"
+    ],
+    "mitigation_steps": [
+      "Contact your ISP or hosting provider",
+      "Activate DDoS mitigation services",
+      "Monitor network traffic patterns",
+      "Scale up resources if necessary"
+    ]
+  },
+  "bruteforce": {
+    "name": "Brute Force Attack",
+    "description": "An attacker attempts to gain access by systematically trying all possible passwords.",
+    "severity": "High",
+    "solutions": [
+      "Implement account lockout policies",
+      "Enforce strong password policies",
+      "Enable multi-factor authentication (MFA)",
+      "Use CAPTCHA for login attempts",
+      "Monitor and alert on multiple failed login attempts"
+    ],
+    "mitigation_steps": [
+      "Reset affected user credentials",
+      "Review and update password policies",
+      "Audit user accounts for suspicious activities",
+      "Consider implementing IP-based restrictions"
+    ]
+  },
+  "xss": {
+    "name": "Cross-Site Scripting (XSS)",
+    "description": "An attacker injects malicious scripts into content from otherwise trusted websites.",
+    "severity": "High",
+    "solutions": [
+      "Implement Content Security Policy (CSP)",
+      "Encode data on output",
+      "Validate and sanitize all user inputs",
+      "Use HTTP-only cookies for sensitive data",
+      "Implement XSS filters"
+    ],
+    "mitigation_steps": [
+      "Scan and clean infected pages",
+      "Review and update input validation",
+      "Audit and update third-party scripts",
+      "Monitor for data exfiltration"
+    ]
+  },
+  "port_scan": {
+    "name": "Port Scanning",
+    "description": "An attacker is scanning your network to identify open ports and services.",
+    "severity": "Medium",
+    "solutions": [
+      "Use a firewall to block unnecessary ports",
+      "Implement intrusion detection/prevention systems (IDS/IPS)",
+      "Regularly update and patch all services",
+      "Use port knocking for sensitive services",
+      "Monitor and log all port scan attempts"
+    ],
+    "mitigation_steps": [
+      "Review firewall rules",
+      "Check for any unauthorized services",
+      "Update all exposed services",
+      "Consider implementing rate limiting"
+    ]
+  }
+}

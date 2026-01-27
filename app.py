@@ -1,6 +1,6 @@
 """
-TabNet-IDS Executive SOC with File Upload
-Users can upload their own network traffic data for analysis
+TabNet-IDS Advanced Threat Detection System
+Next-generation network intrusion detection with AI-powered analysis and real-time monitoring
 """
 
 import streamlit as st
@@ -8,19 +8,45 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
+import json
 from datetime import datetime, timedelta
 import time
 import os
-from pytorch_tabnet.tab_model import TabNetClassifier
 import io
+import sys
+from pathlib import Path
+
+# Add src directory to path
+sys.path.append(str(Path(__file__).parent / 'src'))
+
+# Import TabNet and other ML components
+from pytorch_tabnet.tab_model import TabNetClassifier
+
+# Import custom modules
+from chat_assistant import ChatAssistant
+from solution_recommender import SolutionRecommender, ThreatSolution
+from predict import predict_threats
+from preprocessing import preprocess_data
+from explainability import generate_shap_explanations
 
 # Page configuration
 st.set_page_config(
-    page_title="TabNet-IDS - Upload & Analyze",
-    page_icon="🛡️",
+    page_title="TabNet-IDS - Advanced Threat Detection",
+    page_icon="🔒",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
+    menu_items={
+        'Get Help': 'https://github.com/yourusername/tabnet-ids',
+        'Report a bug': 'https://github.com/yourusername/tabnet-ids/issues',
+        'About': "# TabNet-IDS\nAdvanced Network Intrusion Detection System\n\nPowered by TabNet and Streamlit"
+    }
 )
+
+# Initialize session state for chat
+if 'chat_assistant' not in st.session_state:
+    st.session_state.chat_assistant = ChatAssistant()
+    st.session_state.chat_history = []
+    st.session_state.show_chat = False
 
 # Premium Dark Theme CSS (same as executive)
 st.markdown("""
@@ -190,8 +216,28 @@ st.markdown("""
 # Initialize session state
 if 'analysis_results' not in st.session_state:
     st.session_state.analysis_results = None
-if 'uploaded_data' not in st.session_state:
-    st.session_state.uploaded_data = None
+    st.session_state.uploaded_file = None
+    st.session_state.model_loaded = False
+    st.session_state.processing = False
+    st.session_state.completed_analysis = False
+    st.session_state.threats_detected = 0
+    st.session_state.benign_count = 0
+    st.session_state.threat_categories = {}
+    st.session_state.threat_timeline = []
+    st.session_state.prediction_time = 0
+    st.session_state.upload_time = None
+    st.session_state.show_advanced = False
+    st.session_state.active_tab = "dashboard"
+    st.session_state.real_time_monitoring = False
+    
+# Initialize threat database
+if 'threat_db' not in st.session_state:
+    st.session_state.threat_db = SolutionRecommender()
+    
+# Initialize real-time monitoring
+if 'monitoring_data' not in st.session_state:
+    st.session_state.monitoring_data = pd.DataFrame()
+    st.session_state.monitoring_active = False
 
 # Attack type information
 ATTACK_INFO = {
@@ -318,8 +364,24 @@ def analyze_uploaded_data(df, model):
     return results
 
 # Main Dashboard Header
-st.markdown('<h1 class="executive-header">🛡️ TABNET-IDS ANALYSIS CENTER</h1>', unsafe_allow_html=True)
-st.markdown('<p style="text-align: center; color: #a0aec0; font-size: 1.2rem; margin-top: -1rem;">Upload Network Traffic Data for AI-Powered Threat Analysis</p>', unsafe_allow_html=True)
+col1, col2, col3 = st.columns([1, 2, 1])
+
+with col1:
+    if st.button("💬 AI Security Assistant", key="chat_toggle"):
+        st.session_state.show_chat = not st.session_state.show_chat
+
+with col2:
+    st.markdown('<h1 class="executive-header">🔒 TABNET-IDS THREAT DETECTION</h1>', unsafe_allow_html=True)
+    st.markdown('<p style="text-align: center; color: #a0aec0; font-size: 1.2rem; margin-top: -1rem;">Advanced Network Intrusion Detection with AI-Powered Analysis</p>', unsafe_allow_html=True)
+
+with col3:
+    if st.button("🔄 Real-time Monitoring", key="monitor_toggle"):
+        st.session_state.real_time_monitoring = not st.session_state.real_time_monitoring
+        if st.session_state.real_time_monitoring:
+            st.session_state.monitoring_active = True
+            start_real_time_monitoring()
+        else:
+            st.session_state.monitoring_active = False
 
 # Sidebar
 with st.sidebar:
