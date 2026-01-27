@@ -22,12 +22,37 @@ sys.path.append(str(Path(__file__).parent / 'src'))
 # Import TabNet and other ML components
 from pytorch_tabnet.tab_model import TabNetClassifier
 
-# Import custom modules
-from chat_assistant import ChatAssistant
-from solution_recommender import SolutionRecommender, ThreatSolution
-from predict import predict_threats
-from preprocessing import preprocess_data
-from explainability import generate_shap_explanations
+# Import custom modules with error handling
+try:
+    from chat_assistant import ChatAssistant
+except ImportError:
+    st.warning("Chat assistant module not available")
+    ChatAssistant = None
+
+try:
+    from solution_recommender import SolutionRecommender, ThreatSolution
+except ImportError:
+    st.warning("Solution recommender module not available")
+    SolutionRecommender = None
+    ThreatSolution = None
+
+try:
+    from predict import predict_threats
+except ImportError:
+    st.warning("Predict module not available")
+    predict_threats = None
+
+try:
+    from preprocessing import preprocess_data
+except ImportError:
+    st.warning("Preprocessing module not available")
+    preprocess_data = None
+
+try:
+    from explainability import generate_shap_explanations
+except ImportError:
+    st.warning("Explainability module not available")
+    generate_shap_explanations = None
 
 # Page configuration
 st.set_page_config(
@@ -43,8 +68,11 @@ st.set_page_config(
 )
 
 # Initialize session state for chat
-if 'chat_assistant' not in st.session_state:
+if 'chat_assistant' not in st.session_state and ChatAssistant is not None:
     st.session_state.chat_assistant = ChatAssistant()
+    st.session_state.chat_history = []
+    st.session_state.show_chat = False
+elif 'chat_assistant' not in st.session_state:
     st.session_state.chat_history = []
     st.session_state.show_chat = False
 
