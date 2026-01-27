@@ -1,6 +1,6 @@
-# TabNet-IDS: Interpretable Deep Learning for Network Intrusion Detection
+# TabNet-IDS: Advanced Network Intrusion Detection System
 
-An advanced Intrusion Detection System (IDS) leveraging TabNet's attentive interpretable architecture for network security. This project implements state-of-the-art deep learning with explainable AI (XAI) capabilities for real-time threat detection in IoT/IIoT environments.
+An advanced Intrusion Detection System (IDS) leveraging TabNet's attentive interpretable architecture for network security. This project implements state-of-the-art deep learning with explainable AI (XAI) capabilities for real-time threat detection with AI-powered analysis and monitoring.
 
 ## 🌐 Live Demo
 
@@ -9,11 +9,13 @@ An advanced Intrusion Detection System (IDS) leveraging TabNet's attentive inter
 📖 **Deployment Guide**: See [DEPLOYMENT.md](DEPLOYMENT.md) for step-by-step instructions
 
 ### 🆕 Latest Version Features:
-- 📤 **File Upload**: Upload your own CSV data for analysis
-- 🎨 **Premium UI**: Executive-level dark theme dashboard
-- 📊 **Advanced Visualizations**: Interactive Plotly charts
-- 🔍 **Real-time Analysis**: Instant threat detection and classification
-- 📈 **Detailed Reports**: Comprehensive analysis results
+- � **Real-time Monitoring**: Live network traffic analysis with continuous threat detection
+- 💬 **AI Security Assistant**: Interactive chat interface for security guidance and threat analysis
+- 📊 **Enhanced Dashboard**: Executive-level dark theme with advanced visualizations
+- 🔧 **Solution Recommender**: Comprehensive threat database with mitigation strategies
+- � **File Upload**: Upload your own CSV data for analysis
+- ⚙️ **Centralized Configuration**: Unified settings management system
+- � **Deployment Ready**: Docker, Streamlit Cloud, and cloud deployment support
 
 ## 🎯 Key Features
 
@@ -31,21 +33,29 @@ An advanced Intrusion Detection System (IDS) leveraging TabNet's attentive inter
 ```
 .
 ├── data/
-│   └── raw/
-│       └── instructions.csv      # Training dataset
+│   └── raw/                      # Training datasets
 ├── models/                        # Saved model weights
-├── notebooks/                     # Jupyter notebooks for exploration
-│   └── instruction_detection_exploration.ipynb
 ├── src/
 │   ├── train.py                  # Model training script
 │   ├── predict.py                # Prediction script
-│   └── evaluate.py               # Model evaluation script
+│   ├── evaluate.py               # Model evaluation script
+│   ├── preprocessing.py          # Data preprocessing
+│   ├── explainability.py         # XAI features
+│   ├── real_time_monitor.py      # Real-time monitoring
+│   ├── chat_assistant.py         # AI security assistant
+│   └── solution_recommender.py   # Threat solutions database
 ├── configs/
 │   └── model_config.yaml         # Model configuration
 ├── results/                       # Evaluation results and plots
-├── app.py                         # Streamlit web application
-├── requirements.txt               # Python dependencies
-└── README.md                      # This file
+├── app.py                        # Original Streamlit app
+├── app_enhanced.py               # Enhanced dashboard with all features
+├── config.py                     # Centralized configuration
+├── Dockerfile                    # Docker deployment
+├── docker-compose.yml           # Docker Compose setup
+├── Procfile                      # Heroku deployment
+├── runtime.txt                   # Python runtime specification
+├── requirements.txt              # Python dependencies
+└── README.md                     # This file
 ```
 
 ## 🚀 Quick Start
@@ -204,7 +214,131 @@ Adjust TabNet parameters in `src/train.py` or `configs/model_config.yaml` to opt
 - `gamma`: Feature reusage in attention mechanism
 - `lambda_sparse`: Sparsity regularization strength
 
-## 📦 Dependencies
+## � Deployment
+
+### Docker Deployment
+
+1. **Build and run with Docker:**
+```bash
+docker build -t tabnet-ids .
+docker run -p 8501:8501 tabnet-ids
+```
+
+2. **Using Docker Compose:**
+```bash
+docker-compose up -d
+```
+
+### Streamlit Cloud Deployment
+
+1. **Push to GitHub:**
+```bash
+git add .
+git commit -m "Deploy to Streamlit Cloud"
+git push origin main
+```
+
+2. **Deploy:**
+- Go to [Streamlit Cloud](https://share.streamlit.io/)
+- Connect your GitHub repository
+- Select `app_enhanced.py` as the main file
+- Deploy!
+
+### Heroku Deployment
+
+1. **Install Heroku CLI and login:**
+```bash
+heroku login
+```
+
+2. **Create and deploy:**
+```bash
+heroku create your-app-name
+git push heroku main
+```
+
+### Cloud Deployment (AWS/GCP/Azure)
+
+The application is containerized and can be deployed to any cloud platform that supports Docker containers.
+
+## 🔄 Real-time Monitoring
+
+The enhanced version includes real-time network traffic monitoring:
+
+- **Live Event Processing**: Continuous monitoring of network events
+- **Instant Threat Detection**: Real-time classification and alerting
+- **Interactive Dashboard**: Live metrics and visualizations
+- **Alert Management**: Configurable alert thresholds and notifications
+
+### Starting Real-time Monitoring
+
+```python
+from src.real_time_monitor import RealTimeMonitor
+
+# Initialize monitor
+monitor = RealTimeMonitor()
+
+# Start monitoring
+monitor.start_monitoring()
+```
+
+## 💬 AI Security Assistant
+
+The integrated AI assistant provides:
+
+- **Threat Analysis**: Detailed explanations of detected threats
+- **Security Recommendations**: Actionable mitigation strategies
+- **Interactive Chat**: Natural language interface for security queries
+- **Knowledge Base**: Comprehensive threat database
+
+### Using the AI Assistant
+
+```python
+from src.chat_assistant import ChatAssistant
+
+# Initialize assistant
+assistant = ChatAssistant()
+
+# Process user query
+response = assistant.process_message("What is a DDoS attack?")
+print(response['response'])
+```
+
+## 📊 Enhanced Dashboard Features
+
+- **Multi-page Navigation**: Dashboard, Monitor, Analysis, Chat, Settings
+- **Real-time Metrics**: Live statistics and performance indicators
+- **Interactive Visualizations**: Plotly charts with dark theme
+- **Alert Management**: Real-time security alerts with severity levels
+- **Configuration Panel**: Adjustable detection thresholds and settings
+
+## 🛠️ Advanced Usage
+
+### Custom Configuration
+
+Modify `config.py` to adjust:
+- Model parameters
+- Detection thresholds
+- Monitoring settings
+- Visualization themes
+
+### Extending Threat Database
+
+Add new threat types to `src/solutions_db.json`:
+
+```json
+{
+  "new_threat_type": {
+    "name": "New Threat",
+    "description": "Threat description",
+    "severity": "HIGH",
+    "solutions": ["Solution 1", "Solution 2"],
+    "mitigation_steps": ["Step 1", "Step 2"]
+  }
+}
+```
+
+## �📦 Dependencies
 
 Main dependencies:
 - `pytorch-tabnet`: TabNet implementation
@@ -212,17 +346,19 @@ Main dependencies:
 - `scikit-learn`: Machine learning utilities
 - `pandas`: Data manipulation
 - `streamlit`: Web interface
-- `matplotlib/seaborn`: Visualization
+- `plotly`: Interactive visualizations
+- `numpy`: Numerical computing
 
 ## 🤝 Contributing
 
 To extend this project:
 
-1. Add more instruction classes to the dataset
+1. Add more threat types to the database
 2. Implement advanced feature extraction methods
 3. Experiment with different model architectures
-4. Add cross-validation for robust evaluation
-5. Implement model explainability features
+4. Add more visualization options
+5. Implement additional monitoring features
+6. Contribute to the AI assistant knowledge base
 
 ## 📄 License
 
@@ -232,3 +368,5 @@ To extend this project:
 
 - TabNet paper: [TabNet: Attentive Interpretable Tabular Learning](https://arxiv.org/abs/1908.07442)
 - PyTorch TabNet implementation: [dreamquark-ai/tabnet](https://github.com/dreamquark-ai/tabnet)
+- Streamlit: [Streamlit](https://streamlit.io/)
+- Plotly: [Plotly](https://plotly.com/)
