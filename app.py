@@ -241,10 +241,51 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+def start_real_time_monitoring():
+    """Start real-time monitoring functionality"""
+    try:
+        # Initialize real-time monitor if not already done
+        if 'real_time_monitor' not in st.session_state:
+            try:
+                from real_time_monitor import RealTimeMonitor
+                st.session_state.real_time_monitor = RealTimeMonitor()
+            except ImportError:
+                st.error("❌ Real-time monitoring module not available")
+                return False
+        
+        # Start monitoring
+        st.session_state.real_time_monitor.start_monitoring()
+        st.session_state.monitoring_active = True
+        
+        st.success("🔄 Real-time monitoring started!")
+        return True
+        
+    except Exception as e:
+        st.error(f"❌ Failed to start real-time monitoring: {str(e)}")
+        st.session_state.monitoring_active = False
+        return False
+
+def stop_real_time_monitoring():
+    """Stop real-time monitoring functionality"""
+    try:
+        if 'real_time_monitor' in st.session_state:
+            st.session_state.real_time_monitor.stop_monitoring()
+        
+        st.session_state.monitoring_active = False
+        st.session_state.real_time_monitoring = False
+        
+        st.info("⏹️ Real-time monitoring stopped")
+        return True
+        
+    except Exception as e:
+        st.error(f"❌ Failed to stop real-time monitoring: {str(e)}")
+        return False
+
 # Initialize session state
 if 'analysis_results' not in st.session_state:
     st.session_state.analysis_results = None
     st.session_state.uploaded_file = None
+    st.session_state.uploaded_data = None
     st.session_state.model_loaded = False
     st.session_state.processing = False
     st.session_state.completed_analysis = False
@@ -260,7 +301,7 @@ if 'analysis_results' not in st.session_state:
     
 # Initialize threat database
 if 'threat_db' not in st.session_state:
-    st.session_state.threat_db = SolutionRecommender()
+    st.session_state.threat_db = SolutionRecommender() if SolutionRecommender is not None else None
     
 # Initialize real-time monitoring
 if 'monitoring_data' not in st.session_state:
@@ -409,7 +450,7 @@ with col3:
             st.session_state.monitoring_active = True
             start_real_time_monitoring()
         else:
-            st.session_state.monitoring_active = False
+            stop_real_time_monitoring()
 
 # Sidebar
 with st.sidebar:
