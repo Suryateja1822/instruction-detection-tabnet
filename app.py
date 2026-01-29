@@ -776,3 +776,186 @@ st.markdown("""
     </div>
 </div>
 """, unsafe_allow_html=True)
+
+# AI Chat Assistant Interface
+if st.session_state.show_chat and ChatAssistant is not None:
+    with st.expander("🤖 AI Security Assistant", expanded=True):
+        st.markdown("---")
+        
+        # Display chat history
+        chat_container = st.container()
+        with chat_container:
+            if st.session_state.chat_history:
+                for i, message in enumerate(st.session_state.chat_history):
+                    if message['role'] == 'user':
+                        st.markdown(f"""
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                                   color: white; padding: 10px 15px; border-radius: 10px; 
+                                   margin: 5px 0; max-width: 80%; margin-left: auto;">
+                            <strong>You:</strong> {message['content']}
+                        </div>
+                        """, unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"""
+                        <div style="background: rgba(102, 126, 234, 0.1); 
+                                   color: #e2e8f0; padding: 10px 15px; border-radius: 10px; 
+                                   margin: 5px 0; max-width: 80%; border: 1px solid rgba(102, 126, 234, 0.2);">
+                            <strong>🤖 Assistant:</strong> {message['content']}
+                        </div>
+                        """, unsafe_allow_html=True)
+            else:
+                st.info("👋 Hello! I'm your AI Security Assistant. Ask me anything about network security threats!")
+        
+        # Chat input
+        st.markdown("---")
+        with st.form(key="chat_form", clear_on_submit=True):
+            col1, col2 = st.columns([4, 1])
+            
+            with col1:
+                user_input = st.text_input(
+                    "Ask about security threats...",
+                    key="chat_input",
+                    placeholder="e.g., What is a DDoS attack?",
+                    label_visibility="collapsed"
+                )
+            
+            with col2:
+                submit_button = st.form_submit_button("Send", use_container_width=True)
+            
+            if submit_button and user_input:
+                # Add user message to history
+                st.session_state.chat_history.append({'role': 'user', 'content': user_input})
+                
+                # Get response from assistant
+                try:
+                    assistant = st.session_state.chat_assistant
+                    response = assistant.process_message(user_input)
+                    
+                    # Add assistant response to history
+                    st.session_state.chat_history.append({
+                        'role': 'assistant', 
+                        'content': response['response']
+                    })
+                    
+                    # Auto-refresh to show new message
+                    st.rerun()
+                    
+                except Exception as e:
+                    error_message = f"Sorry, I encountered an error: {str(e)}"
+                    st.session_state.chat_history.append({
+                        'role': 'assistant', 
+                        'content': error_message
+                    })
+                    st.rerun()
+        
+        # Quick suggestions
+        st.markdown("**💡 Quick Questions:**")
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            if st.button("💡 DDoS", key="suggestion_ddos", use_container_width=True):
+                st.session_state.chat_history.append({'role': 'user', 'content': "What is a DDoS attack and how to prevent it?"})
+                try:
+                    assistant = st.session_state.chat_assistant
+                    response = assistant.process_message("What is a DDoS attack and how to prevent it?")
+                    st.session_state.chat_history.append({'role': 'assistant', 'content': response['response']})
+                    st.rerun()
+                except:
+                    st.session_state.chat_history.append({'role': 'assistant', 'content': "DDoS (Distributed Denial of Service) is an attack that overwhelms your network with traffic. Use firewalls and rate limiting to prevent it."})
+                    st.rerun()
+        
+        with col2:
+            if st.button("🔍 SQL Injection", key="suggestion_sql", use_container_width=True):
+                st.session_state.chat_history.append({'role': 'user', 'content': "Explain SQL Injection attacks"})
+                try:
+                    assistant = st.session_state.chat_assistant
+                    response = assistant.process_message("Explain SQL Injection attacks")
+                    st.session_state.chat_history.append({'role': 'assistant', 'content': response['response']})
+                    st.rerun()
+                except:
+                    st.session_state.chat_history.append({'role': 'assistant', 'content': "SQL Injection is when attackers insert malicious SQL code into input fields. Use parameterized queries and input validation to prevent it."})
+                    st.rerun()
+        
+        with col3:
+            if st.button("🛡️ Best Practices", key="suggestion_practices", use_container_width=True):
+                st.session_state.chat_history.append({'role': 'user', 'content': "What are security best practices?"})
+                try:
+                    assistant = st.session_state.chat_assistant
+                    response = assistant.process_message("What are security best practices?")
+                    st.session_state.chat_history.append({'role': 'assistant', 'content': response['response']})
+                    st.rerun()
+                except:
+                    st.session_state.chat_history.append({'role': 'assistant', 'content': "Security best practices include: regular updates, strong passwords, firewall configuration, employee training, and regular security audits."})
+                    st.rerun()
+        
+        with col4:
+            if st.button("📊 Threat Detection", key="suggestion_detection", use_container_width=True):
+                st.session_state.chat_history.append({'role': 'user', 'content': "How does threat detection work?"})
+                try:
+                    assistant = st.session_state.chat_assistant
+                    response = assistant.process_message("How does threat detection work?")
+                    st.session_state.chat_history.append({'role': 'assistant', 'content': response['response']})
+                    st.rerun()
+                except:
+                    st.session_state.chat_history.append({'role': 'assistant', 'content': "Threat detection works by monitoring network traffic for suspicious patterns, using machine learning models like TabNet to identify anomalies and known attack signatures."})
+                    st.rerun()
+
+# Chat controls in sidebar
+with st.sidebar:
+    st.markdown("---")
+    st.markdown("### 💬 AI Assistant")
+    
+    if ChatAssistant is not None:
+        # Toggle chat
+        if st.button("🤖 Toggle AI Chat", key="sidebar_chat_toggle", use_container_width=True):
+            st.session_state.show_chat = not st.session_state.show_chat
+            st.rerun()
+        
+        # Chat status
+        if st.session_state.show_chat:
+            st.success("✅ AI Chat Active")
+        else:
+            st.info("💤 AI Chat Hidden")
+        
+        # Quick actions
+        st.markdown("**Quick Actions:**")
+        
+        if st.button("🔍 Common Threats", key="quick_threats", use_container_width=True):
+            st.session_state.chat_history.append({'role': 'user', 'content': "What are the most common network security threats?"})
+            try:
+                assistant = st.session_state.chat_assistant
+                response = assistant.process_message("What are the most common network security threats?")
+                st.session_state.chat_history.append({'role': 'assistant', 'content': response['response']})
+                st.session_state.show_chat = True
+                st.rerun()
+            except:
+                st.session_state.chat_history.append({'role': 'assistant', 'content': "Common threats include: DDoS attacks, SQL injection, cross-site scripting (XSS), malware, phishing, and brute force attacks."})
+                st.session_state.show_chat = True
+                st.rerun()
+        
+        if st.button("🛡️ Prevention Tips", key="quick_prevention", use_container_width=True):
+            st.session_state.chat_history.append({'role': 'user', 'content': "How can I prevent network attacks?"})
+            try:
+                assistant = st.session_state.chat_assistant
+                response = assistant.process_message("How can I prevent network attacks?")
+                st.session_state.chat_history.append({'role': 'assistant', 'content': response['response']})
+                st.session_state.show_chat = True
+                st.rerun()
+            except:
+                st.session_state.chat_history.append({'role': 'assistant', 'content': "Prevention tips: Use firewalls, keep software updated, implement strong authentication, monitor network traffic, and educate users about security."})
+                st.session_state.show_chat = True
+                st.rerun()
+        
+        # Clear chat history
+        if st.button("🗑️ Clear Chat", key="clear_chat", use_container_width=True):
+            st.session_state.chat_history = []
+            st.success("✅ Chat history cleared!")
+            st.rerun()
+        
+        # Chat statistics
+        if st.session_state.chat_history:
+            st.markdown(f"**💬 Messages:** {len(st.session_state.chat_history)}")
+    else:
+        st.warning("🤖 AI Assistant not available")
+        st.info("Install required dependencies to enable the AI Assistant")
+        st.code("pip install -r requirements.txt")
