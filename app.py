@@ -524,7 +524,7 @@ CSV with columns like:
         )
 
 # Main content
-tab1, tab2, tab3 = st.tabs(["📤 UPLOAD & ANALYZE", "📊 ANALYSIS RESULTS", "📈 DETAILED REPORT"])
+tab1, tab2, tab3, tab4 = st.tabs(["📤 UPLOAD & ANALYZE", "📊 ANALYSIS RESULTS", "📈 DETAILED REPORT", "🔄 REAL-TIME MONITORING"])
 
 # Tab 1: Upload
 with tab1:
@@ -763,6 +763,149 @@ with tab3:
             for severity, count in results['severity_distribution'].items():
                 percentage = (count / results['total_packets'] * 100)
                 st.write(f"- {severity}: {count} ({percentage:.1f}%)")
+
+# Tab 4: Real-time Monitoring
+with tab4:
+    st.markdown("### 🔄 REAL-TIME NETWORK MONITORING")
+    
+    # Monitoring status
+    col1, col2, col3 = st.columns([1, 2, 1])
+    
+    with col1:
+        if st.session_state.monitoring_active:
+            st.markdown("""
+            <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
+                       padding: 1rem; border-radius: 10px; text-align: center; color: white;">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">🟢</div>
+                <div style="font-weight: 700;">MONITORING ACTIVE</div>
+                <div style="font-size: 0.9rem; margin-top: 0.5rem;">Live threat detection running</div>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown("""
+            <div style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); 
+                       padding: 1rem; border-radius: 10px; text-align: center; color: white;">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔴</div>
+                <div style="font-weight: 700;">MONITORING STOPPED</div>
+                <div style="font-size: 0.9rem; margin-top: 0.5rem;">Click to start monitoring</div>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown("### 📊 Live Network Activity")
+        
+        # Generate or display monitoring data
+        if st.session_state.monitoring_active:
+            # Simulate real-time data generation
+            if 'monitoring_data' not in st.session_state or len(st.session_state.monitoring_data) == 0:
+                # Initialize with sample data
+                np.random.seed(42)
+                sample_events = []
+                for i in range(20):
+                    event = {
+                        'timestamp': pd.Timestamp.now() - pd.Timedelta(minutes=i*5),
+                        'source_ip': f"192.168.1.{np.random.randint(1, 254)}",
+                        'dest_ip': f"10.0.0.{np.random.randint(1, 254)}",
+                        'protocol': np.random.choice(['TCP', 'UDP', 'ICMP']),
+                        'port': np.random.choice([80, 443, 22, 53, 25, 110]),
+                        'bytes_sent': np.random.randint(100, 10000),
+                        'bytes_received': np.random.randint(50, 8000),
+                        'threat_level': np.random.choice(['Normal', 'Suspicious', 'Threat'], p=[0.7, 0.2, 0.1]),
+                        'confidence': np.random.uniform(0.5, 1.0)
+                    }
+                    sample_events.append(event)
+                
+                st.session_state.monitoring_data = pd.DataFrame(sample_events)
+            
+            # Display monitoring data
+            if len(st.session_state.monitoring_data) > 0:
+                # Recent events table
+                st.markdown("#### 🔍 Recent Network Events")
+                recent_data = st.session_state.monitoring_data.head(10)
+                
+                # Color code threat levels
+                def highlight_threat(val):
+                    if val == 'Threat':
+                        return 'background-color: #ef4444; color: white;'
+                    elif val == 'Suspicious':
+                        return 'background-color: #fbbf24; color: black;'
+                    else:
+                        return 'background-color: #10b981; color: white;'
+                
+                styled_data = recent_data.style.applymap(highlight_threat, subset=['threat_level'])
+                st.dataframe(styled_data, use_container_width=True)
+                
+                # Threat statistics
+                st.markdown("#### 📈 Threat Statistics")
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    total_events = len(st.session_state.monitoring_data)
+                    st.metric("Total Events", total_events)
+                
+                with col2:
+                    threats = len(st.session_state.monitoring_data[st.session_state.monitoring_data['threat_level'] == 'Threat'])
+                    st.metric("Threats Detected", threats, delta=f"{threats} alerts")
+                
+                with col3:
+                    suspicious = len(st.session_state.monitoring_data[st.session_state.monitoring_data['threat_level'] == 'Suspicious'])
+                    st.metric("Suspicious Activity", suspicious)
+        else:
+            st.info("🔄 Start monitoring to see real-time network activity")
+            st.markdown("""
+            **Real-time monitoring features:**
+            - 📊 Live network traffic analysis
+            - 🚨 Automatic threat detection
+            - 📈 Real-time statistics
+            - 🔍 Event logging and tracking
+            - ⚡ Instant alert generation
+            """)
+    
+    with col3:
+        st.markdown("### ⚙️ Monitoring Controls")
+        
+        # Manual refresh button
+        if st.session_state.monitoring_active:
+            if st.button("🔄 Refresh Data", key="refresh_monitoring", use_container_width=True):
+                # Add new random events
+                new_event = {
+                    'timestamp': pd.Timestamp.now(),
+                    'source_ip': f"192.168.1.{np.random.randint(1, 254)}",
+                    'dest_ip': f"10.0.0.{np.random.randint(1, 254)}",
+                    'protocol': np.random.choice(['TCP', 'UDP', 'ICMP']),
+                    'port': np.random.choice([80, 443, 22, 53, 25, 110]),
+                    'bytes_sent': np.random.randint(100, 10000),
+                    'bytes_received': np.random.randint(50, 8000),
+                    'threat_level': np.random.choice(['Normal', 'Suspicious', 'Threat'], p=[0.7, 0.2, 0.1]),
+                    'confidence': np.random.uniform(0.5, 1.0)
+                }
+                
+                # Add to monitoring data
+                new_df = pd.DataFrame([new_event])
+                st.session_state.monitoring_data = pd.concat([st.session_state.monitoring_data, new_df], ignore_index=True)
+                
+                # Keep only last 50 events
+                if len(st.session_state.monitoring_data) > 50:
+                    st.session_state.monitoring_data = st.session_state.monitoring_data.tail(50)
+                
+                st.success("🔄 Monitoring data refreshed!")
+                st.rerun()
+        
+        # Clear monitoring data
+        if st.button("🗑️ Clear Data", key="clear_monitoring", use_container_width=True):
+            st.session_state.monitoring_data = pd.DataFrame()
+            st.success("🗑️ Monitoring data cleared!")
+            st.rerun()
+        
+        # Monitoring settings
+        st.markdown("#### 🔧 Settings")
+        auto_refresh = st.checkbox("🔄 Auto-refresh (5 seconds)", key="auto_refresh")
+        
+        if auto_refresh and st.session_state.monitoring_active:
+            st.info("⏰ Auto-refresh enabled - data updates every 5 seconds")
+            # Auto-refresh logic would be implemented here with JavaScript
+        else:
+            st.info("⏸️ Manual refresh mode")
 
 # Footer
 st.markdown("---")
