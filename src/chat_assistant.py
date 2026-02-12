@@ -5,14 +5,21 @@ Provides conversational interface for threat analysis and solutions
 
 import random
 from typing import Dict, List, Optional
-from solution_recommender import SolutionRecommender
+try:
+    from solution_recommender import SolutionRecommender
+except ImportError:
+    # Fallback if solution_recommender is not available
+    SolutionRecommender = None
 
 class ChatAssistant:
     """AI Chat Assistant for security threat analysis"""
     
     def __init__(self, solutions_file: str = 'solutions_db.json'):
         """Initialize with solutions database"""
-        self.recommender = SolutionRecommender(solutions_file)
+        if SolutionRecommender is not None:
+            self.recommender = SolutionRecommender(solutions_file)
+        else:
+            self.recommender = None
         self.conversation_history = []
         self._setup_prompts()
     
@@ -77,6 +84,9 @@ class ChatAssistant:
         
     def analyze_threat(self, threat_type: str) -> str:
         """Generate a detailed analysis of a specific threat"""
+        if self.recommender is None:
+            return f"I don't have access to the threat database right now, but I can tell you that '{threat_type}' is a security concern that requires proper monitoring and prevention strategies."
+            
         solution = self.recommender.get_solution(threat_type)
         if not solution:
             return f"I don't have specific information about '{threat_type}'. Could you try a different term or ask about a general security topic?"
@@ -122,21 +132,56 @@ class ChatAssistant:
         
         # Check for greetings
         if any(word in message_lower for word in ["hi", "hello", "hey", "greetings"]):
-            return {"response": f"{self.get_greeting()} {self.get_security_tip()}", "type": "greeting"}
-        """Generate help response with available commands"""
-        return """I can help you with:
-        - Explaining security threats
-        - Providing solutions for detected issues
-        - Answering questions about your security alerts
+            response = f"{self.get_greeting()} {self.get_security_tip()}"
+            self.conversation_history.append({"role": "assistant", "content": response})
+            return {"response": response, "type": "greeting"}
         
-        Try asking:
-        • "What is a SQL injection attack?"
-        • "How do I prevent DDoS attacks?"
-        • "Explain the latest threats in my network"
-        """
+        # Check for help requests
+        if any(word in message_lower for word in ["help", "what can you do", "how can you help"]):
+            response = self.get_help_response()
+            self.conversation_history.append({"role": "assistant", "content": response})
+            return {"response": response, "type": "help"}
+        
+        # Check for solution/mitigation requests
+        if any(word in message_lower for word in ["how to prevent", "how to stop", "solution", "mitigate", "fix"]):
+            return self._handle_solution_request(message)
+        
+        # Check for explanation requests
+        if any(word in message_lower for word in ["what is", "explain", "tell me about", "describe"]):
+            return self._handle_threat_explanation(message)
+        
+        # Check for security best practices
+        if any(word in message_lower for word in ["best practice", "security tips", "how to secure"]):
+            response = "🔒 **Security Best Practices:**\n\n"
+            response += "1. Keep all systems updated with latest patches\n"
+            response += "2. Use strong, unique passwords and MFA\n"
+            response += "3. Implement principle of least privilege\n"
+            response += "4. Regular security audits and monitoring\n"
+            response += "5. Employee security training\n"
+            response += "6. Backup and disaster recovery planning\n"
+            response += "7. Network segmentation and firewalls\n"
+            response += "8. Incident response planning\n\n"
+            response += f"{self.get_security_tip()}"
+            
+            self.conversation_history.append({"role": "assistant", "content": response})
+            return {"response": response, "type": "best_practices"}
+        
+        # Default response
+        return self._generate_default_response(message)
     
     def _handle_solution_request(self, message: str) -> Dict:
         """Handle requests for threat solutions"""
+        if self.recommender is None:
+            response = "I don't have access to my threat database right now, but here are some general security best practices:\n\n"
+            response += "1. Keep all systems and software up to date\n"
+            response += "2. Use strong, unique passwords and enable MFA\n"
+            response += "3. Regularly back up important data\n"
+            response += "4. Use a firewall and keep it properly configured\n"
+            response += "5. Educate users about phishing and social engineering"
+            
+            self.conversation_history.append({"role": "assistant", "content": response})
+            return {"response": response, "type": "general_advice"}
+        
         # Try to find a matching threat in the knowledge base
         similar_threats = self.recommender.find_similar_threats(message)
         
@@ -177,6 +222,19 @@ class ChatAssistant:
     
     def _handle_threat_explanation(self, message: str) -> Dict:
         """Handle requests for threat explanations"""
+        if self.recommender is None:
+            response = "I don't have access to my threat database right now. "
+            response += "Here are some common security threats you might be interested in:\n\n"
+            response += "• SQL Injection\n"
+            response += "• Cross-Site Scripting (XSS)\n"
+            response += "• DDoS Attacks\n"
+            response += "• Malware & Ransomware\n"
+            response += "• Phishing Attacks\n\n"
+            response += "You can ask me about any of these for more details."
+            
+            self.conversation_history.append({"role": "assistant", "content": response})
+            return {"response": response, "type": "general_info"}
+        
         # Try to find a matching threat in the knowledge base
         similar_threats = self.recommender.find_similar_threats(message)
         
