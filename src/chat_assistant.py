@@ -131,7 +131,8 @@ class ChatAssistant:
         message_lower = message.lower()
         
         # Check for greetings
-        if any(word in message_lower for word in ["hi", "hello", "hey", "greetings"]):
+        greeting_words = ["hi", "hello", "hey", "greetings", "hi there", "good morning", "good afternoon"]
+        if any(word in message_lower for word in greeting_words):
             response = f"{self.get_greeting()} {self.get_security_tip()}"
             self.conversation_history.append({"role": "assistant", "content": response})
             return {"response": response, "type": "greeting"}
@@ -143,11 +144,13 @@ class ChatAssistant:
             return {"response": response, "type": "help"}
         
         # Check for solution/mitigation requests
-        if any(word in message_lower for word in ["how to prevent", "how to stop", "solution", "mitigate", "fix"]):
+        solution_keywords = ["how to prevent", "how to stop", "solution", "mitigate", "fix", "protect against", "secure against", "how to protect"]
+        if any(word in message_lower for word in solution_keywords):
             return self._handle_solution_request(message)
         
         # Check for explanation requests
-        if any(word in message_lower for word in ["what is", "explain", "tell me about", "describe"]):
+        explanation_keywords = ["what is", "explain", "tell me about", "describe", "define", "tell me about", "what does"]
+        if any(word in message_lower for word in explanation_keywords):
             return self._handle_threat_explanation(message)
         
         # Check for security best practices
@@ -171,58 +174,154 @@ class ChatAssistant:
     
     def _handle_solution_request(self, message: str) -> Dict:
         """Handle requests for threat solutions"""
-        if self.recommender is None:
+        message_lower = message.lower()
+        
+        # Specific threat solutions
+        if "ddos" in message_lower:
+            response = "🚨 **DDoS Attack Prevention:**\n\n"
+            response += "1. **Rate Limiting**: Implement rate limiting on your servers\n"
+            response += "2. **CDN Protection**: Use Content Delivery Networks with DDoS protection\n"
+            response += "3. **Firewall Rules**: Configure firewalls to block suspicious traffic\n"
+            response += "4. **Load Balancing**: Distribute traffic across multiple servers\n"
+            response += "5. **Monitoring**: Set up real-time traffic monitoring and alerts\n"
+            response += "6. **ISP Coordination**: Work with your ISP for upstream filtering\n\n"
+            response += "💡 **Quick Tip**: Cloud services like AWS Shield and Cloudflare offer excellent DDoS protection."
+            
+        elif "sql injection" in message_lower or "sql" in message_lower:
+            response = "💉 **SQL Injection Prevention:**\n\n"
+            response += "1. **Parameterized Queries**: Use prepared statements instead of string concatenation\n"
+            response += "2. **Input Validation**: Validate and sanitize all user inputs\n"
+            response += "3. **ORM Frameworks**: Use Object-Relational Mapping frameworks\n"
+            response += "4. **Least Privilege**: Limit database user permissions\n"
+            response += "5. **Web Application Firewall**: Deploy WAF with SQL injection rules\n"
+            response += "6. **Regular Updates**: Keep database and application software updated\n\n"
+            response += "💡 **Quick Tip**: Always assume user input is malicious and validate accordingly."
+            
+        elif "phishing" in message_lower:
+            response = "🎣 **Phishing Attack Prevention:**\n\n"
+            response += "1. **Email Filtering**: Implement advanced email filtering systems\n"
+            response += "2. **User Training**: Regular security awareness training\n"
+            response += "3. **Multi-Factor Authentication**: Enable MFA on all accounts\n"
+            response += "4. **Email Verification**: Verify suspicious emails before clicking\n"
+            response += "5. **URL Scanning**: Use tools to scan links before visiting\n"
+            response += "6. **Report Mechanisms**: Easy ways for users to report phishing\n\n"
+            response += "💡 **Quick Tip**: When in doubt, verify requests through a separate communication channel."
+            
+        elif "brute force" in message_lower:
+            response = "🔨 **Brute Force Attack Prevention:**\n\n"
+            response += "1. **Account Lockout**: Lock accounts after multiple failed attempts\n"
+            response += "2. **Strong Passwords**: Enforce complex password requirements\n"
+            response += "3. **Multi-Factor Authentication**: Add MFA as mandatory requirement\n"
+            response += "4. **Rate Limiting**: Limit login attempts per time period\n"
+            response += "5. **CAPTCHA**: Implement CAPTCHA on login forms\n"
+            response += "6. **Monitoring**: Monitor for unusual login patterns\n\n"
+            response += "💡 **Quick Tip**: Account lockout policies should be balanced to avoid denial of service."
+            
+        elif self.recommender is None:
             response = "I don't have access to my threat database right now, but here are some general security best practices:\n\n"
             response += "1. Keep all systems and software up to date\n"
             response += "2. Use strong, unique passwords and enable MFA\n"
             response += "3. Regularly back up important data\n"
             response += "4. Use a firewall and keep it properly configured\n"
             response += "5. Educate users about phishing and social engineering"
+        else:
+            # Try to find a matching threat in the knowledge base
+            similar_threats = self.recommender.find_similar_threats(message)
             
-            self.conversation_history.append({"role": "assistant", "content": response})
-            return {"response": response, "type": "general_advice"}
-        
-        # Try to find a matching threat in the knowledge base
-        similar_threats = self.recommender.find_similar_threats(message)
-        
-        if similar_threats and similar_threats[0]['score'] > 0.3:  # Threshold for good match
-            threat_id = similar_threats[0]['id']
-            solution = self.recommender.get_solution(threat_id)
-            
-            if solution:
-                response = f"🔒 {solution.name} ({solution.severity} Threat)\n\n"
-                response += f"{solution.description}\n\n"
-                response += "🛡️ Recommended Solutions:\n"
-                for i, sol in enumerate(solution.solutions[:5], 1):  # Top 5 solutions
-                    response += f"{i}. {sol}\n"
-                
-                response += "\n🚀 Immediate Actions:\n"
-                for i, step in enumerate(solution.mitigation_steps[:3], 1):  # Top 3 actions
-                    response += f"{i}. {step}\n"
-                
-                self.conversation_history.append({"role": "assistant", "content": response})
-                return {
-                    "response": response,
-                    "type": "solution",
-                    "threat_name": solution.name,
-                    "severity": solution.severity
-                }
-        
-        # If no specific threat found, provide general security advice
-        response = "I'm not sure which specific threat you're referring to. "
-        response += "Here are some general security best practices:\n\n"
-        response += "1. Keep all systems and software up to date\n"
-        response += "2. Use strong, unique passwords and enable MFA\n"
-        response += "3. Regularly back up important data\n"
-        response += "4. Use a firewall and keep it properly configured\n"
-        response += "5. Educate users about phishing and social engineering"
+            if similar_threats and similar_threats[0]['score'] > 0.3:  # Threshold for good match
+                threat_id = similar_threats[0]['id']
+                solution = self.recommender.get_solution(threat_id)
+                response = f"🛡️ **Solution for {threat_id}:**\n\n{solution}"
+            else:
+                response = "I don't have specific information about that threat. Here are general security practices:\n\n"
+                response += "1. Keep systems updated and patched\n"
+                response += "2. Use strong authentication methods\n"
+                response += "3. Monitor network activity regularly\n"
+                response += "4. Educate users about security best practices"
         
         self.conversation_history.append({"role": "assistant", "content": response})
-        return {"response": response, "type": "general_advice"}
+        return {"response": response, "type": "solution"}
     
     def _handle_threat_explanation(self, message: str) -> Dict:
         """Handle requests for threat explanations"""
-        if self.recommender is None:
+        message_lower = message.lower()
+        
+        # Specific threat explanations
+        if "ddos" in message_lower:
+            response = "🚨 **DDoS (Distributed Denial of Service) Attack Explanation:**\n\n"
+            response += "**What it is:** A DDoS attack overwhelms a target server or network with massive traffic from multiple sources, making it unavailable to legitimate users.\n\n"
+            response += "**How it works:**\n"
+            response += "• Attackers use botnets (networks of compromised computers)\n"
+            response += "• Simultaneously send requests to overwhelm server resources\n"
+            response += "• Target bandwidth, CPU, memory, or application resources\n\n"
+            response += "**Common types:**\n"
+            response += "• Volume-based attacks (UDP floods, ICMP floods)\n"
+            response += "• Protocol attacks (SYN floods, fragmented packets)\n"
+            response += "• Application layer attacks (HTTP floods, slowloris)\n\n"
+            response += "**Impact:** Service disruption, revenue loss, reputation damage\n\n"
+            response += "💡 **Detection**: Monitor for unusual traffic spikes and connection patterns."
+            
+            self.conversation_history.append({"role": "assistant", "content": response})
+            return {"response": response, "type": "threat_explanation"}
+            
+        elif "sql injection" in message_lower or "sql" in message_lower:
+            response = "💉 **SQL Injection Attack Explanation:**\n\n"
+            response += "**What it is:** SQL injection is a code injection technique that exploits vulnerabilities in an application's database layer.\n\n"
+            response += "**How it works:**\n"
+            response += "• Attacker inserts malicious SQL statements into input fields\n"
+            response += "• Application executes these statements on the database\n"
+            response += "• Can bypass authentication, steal data, or modify database\n\n"
+            response += "**Common examples:**\n"
+            response += "• Authentication bypass: ' OR '1'='1\n"
+            response += "• Data extraction: UNION SELECT statements\n"
+            response += "• Database modification: DROP TABLE commands\n\n"
+            response += "**Impact:** Data theft, data corruption, system compromise\n\n"
+            response += "💡 **Prevention**: Use parameterized queries and input validation."
+            
+            self.conversation_history.append({"role": "assistant", "content": response})
+            return {"response": response, "type": "threat_explanation"}
+            
+        elif "phishing" in message_lower:
+            response = "🎣 **Phishing Attack Explanation:**\n\n"
+            response += "**What it is:** Phishing is a social engineering attack that tricks users into revealing sensitive information.\n\n"
+            response += "**How it works:**\n"
+            response += "• Attackers send deceptive emails or messages\n"
+            response += "• Impersonate legitimate organizations or individuals\n"
+            response += "• Create fake websites or login pages\n"
+            response += "• Steal credentials, financial information, or personal data\n\n"
+            response += "**Common types:**\n"
+            response += "• Email phishing: Fake emails from banks, services, etc.\n"
+            response += "• Spear phishing: Targeted attacks on specific individuals\n"
+            response += "• Whaling: Attacks targeting high-level executives\n"
+            response += "• Smishing: SMS-based phishing attacks\n\n"
+            response += "**Impact:** Credential theft, financial loss, identity theft\n\n"
+            response += "💡 **Protection**: Verify sender identity and never click suspicious links."
+            
+            self.conversation_history.append({"role": "assistant", "content": response})
+            return {"response": response, "type": "threat_explanation"}
+            
+        elif "malware" in message_lower or "ransomware" in message_lower:
+            response = "🦠 **Malware & Ransomware Explanation:**\n\n"
+            response += "**What it is:** Malicious software designed to damage, disrupt, or gain unauthorized access to computer systems.\n\n"
+            response += "**Types of Malware:**\n"
+            response += "• **Viruses**: Self-replicating programs that attach to other files\n"
+            response += "• **Worms**: Self-replicating programs that spread across networks\n"
+            response += "• **Trojans**: Disguised as legitimate software\n"
+            response += "• **Spyware**: Collects user information without consent\n"
+            response += "• **Ransomware**: Encrypts files and demands payment\n\n"
+            response += "**How infections occur:**\n"
+            response += "• Email attachments and malicious links\n"
+            response += "• Software downloads from untrusted sources\n"
+            response += "• Exploitation of software vulnerabilities\n"
+            response += "• Removable media (USB drives, etc.)\n\n"
+            response += "**Impact:** Data loss, system damage, financial extortion\n\n"
+            response += "💡 **Protection**: Use antivirus software and keep systems updated."
+            
+            self.conversation_history.append({"role": "assistant", "content": response})
+            return {"response": response, "type": "threat_explanation"}
+            
+        else:
+            # If no specific threat matched, provide general threat list
             response = "I don't have access to my threat database right now. "
             response += "Here are some common security threats you might be interested in:\n\n"
             response += "• SQL Injection\n"
@@ -236,7 +335,9 @@ class ChatAssistant:
             return {"response": response, "type": "general_info"}
         
         # Try to find a matching threat in the knowledge base
-        similar_threats = self.recommender.find_similar_threats(message)
+        similar_threats = None
+        if self.recommender is not None:
+            similar_threats = self.recommender.find_similar_threats(message)
         
         if similar_threats and similar_threats[0]['score'] > 0.3:  # Threshold for good match
             threat_id = similar_threats[0]['id']
