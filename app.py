@@ -30,6 +30,14 @@ except ImportError:
     ChatAssistant = None
 
 try:
+    from user_friendly_output import display_user_friendly_dashboard, display_user_friendly_alerts, create_simple_explanation_guide
+except ImportError:
+    st.warning("User-friendly output module not available")
+    display_user_friendly_dashboard = None
+    display_user_friendly_alerts = None
+    create_simple_explanation_guide = None
+
+try:
     from solution_recommender import SolutionRecommender, ThreatSolution
 except ImportError:
     st.warning("Solution recommender module not available")
@@ -304,15 +312,17 @@ if 'analysis_results' not in st.session_state:
     st.session_state.uploaded_file = None
     st.session_state.uploaded_data = None
     st.session_state.model_loaded = False
-    st.session_state.processing = False
-    st.session_state.completed_analysis = False
-    st.session_state.threats_detected = 0
-    st.session_state.benign_count = 0
+    st.session_state.upload_time = None
+    st.session_state.show_advanced = False
+    st.session_state.active_tab = "dashboard"
+    st.session_state.real_time_monitoring = False
+    st.session_state.user_friendly_mode = True
     st.session_state.threat_categories = {}
     st.session_state.threat_timeline = []
     st.session_state.prediction_time = 0
     st.session_state.upload_time = None
     st.session_state.show_advanced = False
+
     st.session_state.active_tab = "dashboard"
     st.session_state.real_time_monitoring = False
     
@@ -484,17 +494,53 @@ with st.sidebar:
     
     st.markdown("---")
     
+    # User-friendly mode toggle
+    user_friendly = st.checkbox(
+        "🎯 User-Friendly Mode", 
+        value=st.session_state.get('user_friendly_mode', True),
+        help="Show simple explanations and visual guides"
+    )
+    st.session_state.user_friendly_mode = user_friendly
+    
     # Instructions
     st.markdown("### 📋 HOW TO USE")
-    st.info("""
-    **1.** Upload CSV file with network traffic
+    if user_friendly:
+        st.info("""
+        **🎯 User-Friendly Mode is ON**
+        
+        **Simple Steps:**
+        1. **Upload** your network traffic CSV file
+        2. **Analyze** the data for threats
+        3. **Monitor** real-time network activity
+        4. **Get Alerts** when threats are found
+        
+        **💡 What You'll See:**
+        - Clear explanations of what's happening
+        - Simple action steps for each threat type
+        - Color-coded alerts (Green=Normal, Yellow=Suspicious, Red=Threat)
+        - Easy-to-understand charts and summaries
+        """)
+    else:
+        st.info("""
+        **🔧 Technical Mode is ON**
+        
+        **Advanced Steps:**
+        1. **Upload** CSV with network traffic features
+        2. **Analyze** using TabNet deep learning model
+        3. **Monitor** with real-time threat detection
+        4. **Configure** alert settings and thresholds
+        
+        **📊 Technical Features:**
+        - Detailed threat classifications
+        - Confidence scores and probabilities
+        - Advanced alert configurations
+        - Performance metrics and statistics
+        """)
     
-    **2.** Click 'Analyze Data'
-    
-    **3.** View results and threats
-    
-    **4.** Download report
-    """)
+    # User-friendly guide
+    if user_friendly and create_simple_explanation_guide:
+        with st.expander("📖 Understanding Security Alerts"):
+            st.markdown(create_simple_explanation_guide(), unsafe_allow_html=True)
     
     st.markdown("---")
     
@@ -818,12 +864,41 @@ with tab4:
             if alert_summary['total_alerts'] > 0:
                 recent_alerts = monitor.get_recent_alerts(3)  # Show last 3 alerts
                 
-                for alert in recent_alerts:
-                    severity_color = {
-                        'CRITICAL': '#dc2626',
-                        'HIGH': '#ea580c', 
-                        'MEDIUM': '#d97706',
-                        'LOW': '#65a30d'
+                # Use user-friendly alerts if enabled
+                if st.session_state.get('user_friendly_mode', True) and display_user_friendly_alerts:
+                    st.markdown("### 🚨 Security Alerts")
+                    display_user_friendly_alerts(recent_alerts)
+                else:
+                    # Original technical alert display
+                    for alert in recent_alerts:
+                        severity_color = {
+                            'CRITICAL': '#dc2626',
+                            'HIGH': '#ea580c', 
+                            'MEDIUM': '#d97706',
+                            'LOW': '#65a30d'
+                        }.get(alert['severity'], '#6b7280')
+                        
+                        animation_class = 'critical-alert' if alert['severity'] == 'CRITICAL' else ''
+                        
+                        st.markdown(f"""
+                        <div style="background: {severity_color}; 
+                                   padding: 1rem; border-radius: 10px; margin-bottom: 1rem; 
+                                   border: 2px solid rgba(255,255,255,0.3); animation: pulse 2s infinite;"
+                           class="{animation_class}">
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <div>
+                                    <div style="color: white; font-size: 1.1rem; font-weight: 700;">
+                                        🚨 {alert['severity']} ALERT
+                                    </div>
+                                    <div style="color: rgba(255,255,255,0.9); font-size: 0.9rem; margin-top: 0.3rem;">
+                                        {alert['threat_type'].upper()} Detected
+                                    </div>
+                                    <div style="color: rgba(255,255,255,0.8); font-size: 0.8rem; margin-top: 0.2rem;">
+                                        {alert['source_ip']} → {alert['dest_ip']}
+                                    </div>
+                                    <div style="color: rgba(255,255,255,0.8); font-size: 0.8rem;">
+                                        {alert['description']}
+                                    </div>
                     }.get(alert['severity'], '#6b7280')
                     
                     animation_class = 'critical-alert' if alert['severity'] == 'CRITICAL' else ''
@@ -862,34 +937,39 @@ with tab4:
         
         st.markdown("### 📊 Live Network Activity")
         
-        # Generate or display monitoring data
+        # Generate or# Display monitoring data
         if st.session_state.monitoring_active:
-            # Simulate real-time data generation
-            if 'monitoring_data' not in st.session_state or len(st.session_state.monitoring_data) == 0:
-                # Initialize with sample data
-                np.random.seed(42)
-                sample_events = []
-                for i in range(20):
-                    event = {
-                        'timestamp': pd.Timestamp.now() - pd.Timedelta(minutes=i*5),
-                        'source_ip': f"192.168.1.{np.random.randint(1, 254)}",
-                        'dest_ip': f"10.0.0.{np.random.randint(1, 254)}",
-                        'protocol': np.random.choice(['TCP', 'UDP', 'ICMP']),
-                        'port': np.random.choice([80, 443, 22, 53, 25, 110]),
-                        'bytes_sent': np.random.randint(100, 10000),
-                        'bytes_received': np.random.randint(50, 8000),
-                        'threat_level': np.random.choice(['Normal', 'Suspicious', 'Threat'], p=[0.7, 0.2, 0.1]),
-                        'confidence': np.random.uniform(0.5, 1.0)
-                    }
-                    sample_events.append(event)
+            # Use user-friendly display if enabled
+            if st.session_state.get('user_friendly_mode', True) and display_user_friendly_dashboard:
+                display_user_friendly_dashboard(st.session_state.monitoring_data)
+            else:
+                # Original technical display
+                # Simulate real-time data generation
+                if 'monitoring_data' not in st.session_state or len(st.session_state.monitoring_data) == 0:
+                    # Initialize with sample data
+                    np.random.seed(42)
+                    sample_events = []
+                    for i in range(20):
+                        event = {
+                            'timestamp': pd.Timestamp.now() - pd.Timedelta(minutes=i*5),
+                            'source_ip': f"192.168.1.{np.random.randint(1, 254)}",
+                            'dest_ip': f"10.0.0.{np.random.randint(1, 254)}",
+                            'protocol': np.random.choice(['TCP', 'UDP', 'ICMP']),
+                            'port': np.random.choice([80, 443, 22, 53, 25, 110]),
+                            'bytes_sent': np.random.randint(100, 10000),
+                            'bytes_received': np.random.randint(50, 8000),
+                            'threat_level': np.random.choice(['Normal', 'Suspicious', 'Threat'], p=[0.7, 0.2, 0.1]),
+                            'confidence': np.random.uniform(0.5, 1.0)
+                        }
+                        sample_events.append(event)
+                    
+                    st.session_state.monitoring_data = pd.DataFrame(sample_events)
                 
-                st.session_state.monitoring_data = pd.DataFrame(sample_events)
-            
-            # Display monitoring data
-            if len(st.session_state.monitoring_data) > 0:
-                # Recent events table
-                st.markdown("#### 🔍 Recent Network Events")
-                recent_data = st.session_state.monitoring_data.head(10)
+                # Display monitoring data
+                if len(st.session_state.monitoring_data) > 0:
+                    # Recent events table
+                    st.markdown("#### 🔍 Recent Network Events")
+                    recent_data = st.session_state.monitoring_data.head(10)
                 
                 # Color code threat levels
                 def highlight_threat(val):
