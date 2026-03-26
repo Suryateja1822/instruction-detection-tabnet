@@ -24,13 +24,13 @@ from pytorch_tabnet.tab_model import TabNetClassifier
 
 # Import custom modules with error handling
 try:
-    from chat_assistant import ChatAssistant
+    from src.chat_assistant import ChatAssistant
 except ImportError:
     st.warning("Chat assistant module not available")
     ChatAssistant = None
 
 try:
-    from user_friendly_output import display_user_friendly_dashboard, display_user_friendly_alerts, create_simple_explanation_guide
+    from src.user_friendly_output import display_user_friendly_dashboard, display_user_friendly_alerts, create_simple_explanation_guide
 except ImportError:
     st.warning("User-friendly output module not available")
     display_user_friendly_dashboard = None
@@ -38,26 +38,26 @@ except ImportError:
     create_simple_explanation_guide = None
 
 try:
-    from solution_recommender import SolutionRecommender, ThreatSolution
+    from src.solution_recommender import SolutionRecommender, ThreatSolution
 except ImportError:
     st.warning("Solution recommender module not available")
     SolutionRecommender = None
     ThreatSolution = None
 
 try:
-    from predict import predict_threats
+    from src.predict import predict_threats
 except ImportError:
     st.warning("Predict module not available")
     predict_threats = None
 
 try:
-    from preprocessing import preprocess_data
+    from src.preprocessing import preprocess_data
 except ImportError:
     st.warning("Preprocessing module not available")
     preprocess_data = None
 
 try:
-    from explainability import generate_shap_explanations
+    from src.explainability import generate_shap_explanations
 except ImportError:
     st.warning("Explainability module not available")
     generate_shap_explanations = None
@@ -272,7 +272,7 @@ def start_real_time_monitoring():
         # Initialize real-time monitor if not already done
         if 'real_time_monitor' not in st.session_state:
             try:
-                from real_time_monitor import RealTimeMonitor
+                from src.real_time_monitor import RealTimeMonitor
                 st.session_state.real_time_monitor = RealTimeMonitor()
             except ImportError:
                 st.error("❌ Real-time monitoring module not available")
@@ -899,105 +899,86 @@ with tab4:
                                     <div style="color: rgba(255,255,255,0.8); font-size: 0.8rem;">
                                         {alert['description']}
                                     </div>
-                    }.get(alert['severity'], '#6b7280')
-                    
-                    animation_class = 'critical-alert' if alert['severity'] == 'CRITICAL' else ''
-                    
-                    st.markdown(f"""
-                    <div style="background: {severity_color}; 
-                               padding: 1rem; border-radius: 10px; margin-bottom: 1rem; 
-                               border: 2px solid rgba(255,255,255,0.3); animation: pulse 2s infinite;"
-                       class="{animation_class}">
-                        <div style="display: flex; align-items: center; justify-content: space-between;">
-                            <div>
-                                <div style="color: white; font-size: 1.1rem; font-weight: 700;">
-                                    🚨 {alert['severity']} ALERT
                                 </div>
-                                <div style="color: rgba(255,255,255,0.9); font-size: 0.9rem; margin-top: 0.3rem;">
-                                    {alert['threat_type'].upper()} Detected
-                                </div>
-                                <div style="color: rgba(255,255,255,0.8); font-size: 0.8rem; margin-top: 0.2rem;">
-                                    {alert['source_ip']} → {alert['dest_ip']}
-                                </div>
-                                <div style="color: rgba(255,255,255,0.8); font-size: 0.8rem;">
-                                    {alert['description']}
-                                </div>
-                            </div>
-                            <div style="text-align: right;">
-                                <div style="color: white; font-size: 1.2rem; font-weight: 700;">
-                                    {alert['confidence']:.1%}
-                                </div>
-                                <div style="color: rgba(255,255,255,0.8); font-size: 0.7rem;">
-                                    CONFIDENCE
+                                <div style="text-align: right;">
+                                    <div style="color: white; font-size: 1.2rem; font-weight: 700;">
+                                        {alert['confidence']:.1%}
+                                    </div>
+                                    <div style="color: rgba(255,255,255,0.8); font-size: 0.7rem;">
+                                        CONFIDENCE
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                        """, unsafe_allow_html=True)
         
         st.markdown("### 📊 Live Network Activity")
         
-        # Generate or# Display monitoring data
-        if st.session_state.monitoring_active:
-            # Use user-friendly display if enabled
-            if st.session_state.get('user_friendly_mode', True) and display_user_friendly_dashboard:
-                display_user_friendly_dashboard(st.session_state.monitoring_data)
-            else:
-                # Original technical display
-                # Simulate real-time data generation
-                if 'monitoring_data' not in st.session_state or len(st.session_state.monitoring_data) == 0:
-                    # Initialize with sample data
-                    np.random.seed(42)
-                    sample_events = []
-                    for i in range(20):
-                        event = {
-                            'timestamp': pd.Timestamp.now() - pd.Timedelta(minutes=i*5),
-                            'source_ip': f"192.168.1.{np.random.randint(1, 254)}",
-                            'dest_ip': f"10.0.0.{np.random.randint(1, 254)}",
-                            'protocol': np.random.choice(['TCP', 'UDP', 'ICMP']),
-                            'port': np.random.choice([80, 443, 22, 53, 25, 110]),
-                            'bytes_sent': np.random.randint(100, 10000),
-                            'bytes_received': np.random.randint(50, 8000),
-                            'threat_level': np.random.choice(['Normal', 'Suspicious', 'Threat'], p=[0.7, 0.2, 0.1]),
-                            'confidence': np.random.uniform(0.5, 1.0)
-                        }
-                        sample_events.append(event)
+        # Display monitoring data
+        if st.session_state.monitoring_active and 'real_time_monitor' in st.session_state:
+            monitor = st.session_state.real_time_monitor
+            
+            # Get real monitoring data
+            recent_events = monitor.get_recent_events(20)
+            statistics = monitor.get_statistics()
+            
+            # Convert events to DataFrame for display
+            if recent_events:
+                monitoring_data = []
+                for event in recent_events:
+                    monitoring_data.append({
+                        'timestamp': event.timestamp,
+                        'source_ip': event.source_ip,
+                        'dest_ip': event.dest_ip,
+                        'protocol': event.protocol,
+                        'port': event.port,
+                        'bytes_sent': event.bytes_sent,
+                        'bytes_received': event.bytes_received,
+                        'threat_level': 'Threat' if event.features.get('is_threat', 0) > 0.5 else 'Normal',
+                        'confidence': event.features.get('threat_confidence', 0.0)
+                    })
+                
+                monitoring_df = pd.DataFrame(monitoring_data)
+                
+                # Use user-friendly display if enabled
+                if st.session_state.get('user_friendly_mode', True) and display_user_friendly_dashboard:
+                    display_user_friendly_dashboard(monitoring_df)
+                else:
+                    # Original technical display
+                    if len(monitoring_df) > 0:
+                        # Recent events table
+                        st.markdown("#### 🔍 Recent Network Events")
+                        recent_data = monitoring_df.head(10)
                     
-                    st.session_state.monitoring_data = pd.DataFrame(sample_events)
-                
-                # Display monitoring data
-                if len(st.session_state.monitoring_data) > 0:
-                    # Recent events table
-                    st.markdown("#### 🔍 Recent Network Events")
-                    recent_data = st.session_state.monitoring_data.head(10)
-                
-                # Color code threat levels
-                def highlight_threat(val):
-                    if val == 'Threat':
-                        return 'background-color: #ef4444; color: white;'
-                    elif val == 'Suspicious':
-                        return 'background-color: #fbbf24; color: black;'
-                    else:
-                        return 'background-color: #10b981; color: white;'
-                
-                styled_data = recent_data.style.applymap(highlight_threat, subset=['threat_level'])
-                st.dataframe(styled_data, use_container_width=True)
-                
-                # Threat statistics
-                st.markdown("#### 📈 Threat Statistics")
-                col1, col2, col3 = st.columns(3)
-                
-                with col1:
-                    total_events = len(st.session_state.monitoring_data)
-                    st.metric("Total Events", total_events)
-                
-                with col2:
-                    threats = len(st.session_state.monitoring_data[st.session_state.monitoring_data['threat_level'] == 'Threat'])
-                    st.metric("Threats Detected", threats, delta=f"{threats} alerts")
-                
-                with col3:
-                    suspicious = len(st.session_state.monitoring_data[st.session_state.monitoring_data['threat_level'] == 'Suspicious'])
-                    st.metric("Suspicious Activity", suspicious)
+                        # Color code threat levels
+                        def highlight_threat(val):
+                            if val == 'Threat':
+                                return 'background-color: #ef4444; color: white;'
+                            elif val == 'Suspicious':
+                                return 'background-color: #fbbf24; color: black;'
+                            else:
+                                return 'background-color: #10b981; color: white;'
+                        
+                        styled_data = recent_data.style.applymap(highlight_threat, subset=['threat_level'])
+                        st.dataframe(styled_data, use_container_width=True)
+                        
+                        # Threat statistics
+                        st.markdown("#### 📈 Threat Statistics")
+                        col1, col2, col3 = st.columns(3)
+                        
+                        with col1:
+                            total_events = statistics['total_events']
+                            st.metric("Total Events", total_events)
+                        
+                        with col2:
+                            threats_detected = statistics['threats_detected']
+                            st.metric("Threats Detected", threats_detected, delta=f"{threats_detected} alerts")
+                        
+                        with col3:
+                            alert_summary = monitor.get_alert_summary()
+                            st.metric("Recent Alerts", alert_summary['total_alerts'])
+            else:
+                st.info("🔄 Waiting for network events...")
         else:
             st.info("🔄 Start monitoring to see real-time network activity")
             st.markdown("""
@@ -1013,35 +994,22 @@ with tab4:
         st.markdown("### ⚙️ Monitoring Controls")
         
         # Manual refresh button
-        if st.session_state.monitoring_active:
+        if st.session_state.monitoring_active and 'real_time_monitor' in st.session_state:
             if st.button("🔄 Refresh Data", key="refresh_monitoring", use_container_width=True):
-                # Add new random events
-                new_event = {
-                    'timestamp': pd.Timestamp.now(),
-                    'source_ip': f"192.168.1.{np.random.randint(1, 254)}",
-                    'dest_ip': f"10.0.0.{np.random.randint(1, 254)}",
-                    'protocol': np.random.choice(['TCP', 'UDP', 'ICMP']),
-                    'port': np.random.choice([80, 443, 22, 53, 25, 110]),
-                    'bytes_sent': np.random.randint(100, 10000),
-                    'bytes_received': np.random.randint(50, 8000),
-                    'threat_level': np.random.choice(['Normal', 'Suspicious', 'Threat'], p=[0.7, 0.2, 0.1]),
-                    'confidence': np.random.uniform(0.5, 1.0)
-                }
-                
-                # Add to monitoring data
-                new_df = pd.DataFrame([new_event])
-                st.session_state.monitoring_data = pd.concat([st.session_state.monitoring_data, new_df], ignore_index=True)
-                
-                # Keep only last 50 events
-                if len(st.session_state.monitoring_data) > 50:
-                    st.session_state.monitoring_data = st.session_state.monitoring_data.tail(50)
-                
-                st.success("🔄 Monitoring data refreshed!")
+                # Force refresh of monitoring data
+                monitor = st.session_state.real_time_monitor
+                recent_events = monitor.get_recent_events(20)
+                st.success(f"🔄 Monitoring data refreshed! Found {len(recent_events)} recent events")
                 st.rerun()
         
         # Clear monitoring data
         if st.button("🗑️ Clear Data", key="clear_monitoring", use_container_width=True):
-            st.session_state.monitoring_data = pd.DataFrame()
+            if 'real_time_monitor' in st.session_state:
+                monitor = st.session_state.real_time_monitor
+                monitor.event_buffer.clear()
+                monitor.stats['total_events'] = 0
+                monitor.stats['threats_detected'] = 0
+                monitor.stats['alerts'] = []
             st.success("🗑️ Monitoring data cleared!")
             st.rerun()
         

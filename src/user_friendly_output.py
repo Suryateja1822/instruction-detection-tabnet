@@ -259,8 +259,7 @@ class UserFriendlyOutput:
             x='Time',
             y=['Normal Traffic', 'Suspicious', 'Threats'],
             title='Network Activity Summary',
-            color_discrete_map=['Normal Traffic', 'Suspicious', 'Threats'],
-            color_continuous_scale=['#10b981', '#f59e0b', '#dc2626']
+            color_discrete_sequence=['#10b981', '#f59e0b', '#dc2626']
         )
         
         fig.update_layout(
