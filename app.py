@@ -238,6 +238,23 @@ st.markdown("""
     h1, h2, h3, h4, h5, h6, p, span, div {
         color: #e2e8f0 !important;
     }
+    
+    /* Alert animation */
+    @keyframes pulse {
+        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
+        50% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); }
+        100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+    }
+    
+    /* Flashing alert for critical alerts */
+    @keyframes flash {
+        0%, 50%, 100% { opacity: 1; }
+        25%, 75% { opacity: 0.3; }
+    }
+    
+    .critical-alert {
+        animation: flash 1s infinite;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -792,6 +809,57 @@ with tab4:
             """, unsafe_allow_html=True)
     
     with col2:
+        # Alert Display Area
+        if st.session_state.monitoring_active and 'real_time_monitor' in st.session_state:
+            monitor = st.session_state.real_time_monitor
+            alert_summary = monitor.get_alert_summary()
+            
+            # Show active alerts prominently
+            if alert_summary['total_alerts'] > 0:
+                recent_alerts = monitor.get_recent_alerts(3)  # Show last 3 alerts
+                
+                for alert in recent_alerts:
+                    severity_color = {
+                        'CRITICAL': '#dc2626',
+                        'HIGH': '#ea580c', 
+                        'MEDIUM': '#d97706',
+                        'LOW': '#65a30d'
+                    }.get(alert['severity'], '#6b7280')
+                    
+                    animation_class = 'critical-alert' if alert['severity'] == 'CRITICAL' else ''
+                    
+                    st.markdown(f"""
+                    <div style="background: {severity_color}; 
+                               padding: 1rem; border-radius: 10px; margin-bottom: 1rem; 
+                               border: 2px solid rgba(255,255,255,0.3); animation: pulse 2s infinite;"
+                       class="{animation_class}">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <div>
+                                <div style="color: white; font-size: 1.1rem; font-weight: 700;">
+                                    🚨 {alert['severity']} ALERT
+                                </div>
+                                <div style="color: rgba(255,255,255,0.9); font-size: 0.9rem; margin-top: 0.3rem;">
+                                    {alert['threat_type'].upper()} Detected
+                                </div>
+                                <div style="color: rgba(255,255,255,0.8); font-size: 0.8rem; margin-top: 0.2rem;">
+                                    {alert['source_ip']} → {alert['dest_ip']}
+                                </div>
+                                <div style="color: rgba(255,255,255,0.8); font-size: 0.8rem;">
+                                    {alert['description']}
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="color: white; font-size: 1.2rem; font-weight: 700;">
+                                    {alert['confidence']:.1%}
+                                </div>
+                                <div style="color: rgba(255,255,255,0.8); font-size: 0.7rem;">
+                                    CONFIDENCE
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+        
         st.markdown("### 📊 Live Network Activity")
         
         # Generate or display monitoring data
@@ -897,8 +965,69 @@ with tab4:
             st.success("🗑️ Monitoring data cleared!")
             st.rerun()
         
+        # Alert settings
+        st.markdown("#### 🚨 Alert Settings")
+        
+        # Initialize alert settings in session state
+        if 'alerts_enabled' not in st.session_state:
+            st.session_state.alerts_enabled = True
+        if 'sound_enabled' not in st.session_state:
+            st.session_state.sound_enabled = True
+        if 'alert_cooldown' not in st.session_state:
+            st.session_state.alert_cooldown = 30
+        
+        # Alert controls
+        alerts_enabled = st.checkbox("🚨 Enable Alerts", value=st.session_state.alerts_enabled, key="alerts_toggle")
+        sound_enabled = st.checkbox("🔊 Enable Sound", value=st.session_state.sound_enabled, key="sound_toggle")
+        
+        # Alert cooldown slider
+        cooldown = st.slider("⏱️ Alert Cooldown (seconds)", min_value=5, max_value=120, value=st.session_state.alert_cooldown, key="cooldown_slider")
+        
+        # Update session state and monitor settings
+        if 'real_time_monitor' in st.session_state:
+            monitor = st.session_state.real_time_monitor
+            
+            # Update alert settings
+            if alerts_enabled != st.session_state.alerts_enabled:
+                monitor.enable_alerts(alerts_enabled)
+                st.session_state.alerts_enabled = alerts_enabled
+                
+            if sound_enabled != st.session_state.sound_enabled:
+                monitor.enable_sound(sound_enabled)
+                st.session_state.sound_enabled = sound_enabled
+                
+            if cooldown != st.session_state.alert_cooldown:
+                monitor.set_alert_cooldown(cooldown)
+                st.session_state.alert_cooldown = cooldown
+        
+        # Alert status indicator
+        if 'real_time_monitor' in st.session_state and st.session_state.monitoring_active:
+            monitor = st.session_state.real_time_monitor
+            alert_summary = monitor.get_alert_summary()
+            
+            # Alert status card
+            if alert_summary['total_alerts'] > 0:
+                last_alert = alert_summary['last_alert']
+                if last_alert:
+                    st.markdown(f"""
+                    <div style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); 
+                               padding: 0.8rem; border-radius: 8px; text-align: center; color: white; margin-top: 1rem;">
+                        <div style="font-size: 1.2rem; font-weight: 700;">🚨 LAST ALERT</div>
+                        <div style="font-size: 0.9rem; margin-top: 0.3rem;">{last_alert['threat_type'].upper()}</div>
+                        <div style="font-size: 0.8rem; margin-top: 0.2rem;">Confidence: {last_alert['confidence']:.1%}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+            else:
+                st.markdown("""
+                <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
+                           padding: 0.8rem; border-radius: 8px; text-align: center; color: white; margin-top: 1rem;">
+                    <div style="font-size: 1.2rem; font-weight: 700;">✅ NO ALERTS</div>
+                    <div style="font-size: 0.9rem; margin-top: 0.3rem;">All systems normal</div>
+                </div>
+                """, unsafe_allow_html=True)
+        
         # Monitoring settings
-        st.markdown("#### 🔧 Settings")
+        st.markdown("#### 🔧 General Settings")
         auto_refresh = st.checkbox("🔄 Auto-refresh (5 seconds)", key="auto_refresh")
         
         if auto_refresh and st.session_state.monitoring_active:

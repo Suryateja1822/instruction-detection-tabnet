@@ -18,6 +18,17 @@ import random
 from dataclasses import dataclass
 import asyncio
 from collections import deque
+import winsound  # For Windows audio alerts
+import platform
+import subprocess
+from enum import Enum
+
+class AlertSeverity(Enum):
+    """Alert severity levels"""
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
 
 @dataclass
 class NetworkEvent:
@@ -34,8 +45,20 @@ class NetworkEvent:
     packet_count: int
     features: Dict[str, float]
 
+@dataclass
+class SecurityAlert:
+    """Represents a security alert"""
+    timestamp: datetime
+    severity: AlertSeverity
+    threat_type: str
+    source_ip: str
+    dest_ip: str
+    description: str
+    confidence: float
+    details: Dict[str, any]
+
 class RealTimeMonitor:
-    """Real-time network traffic monitoring system"""
+    """Real-time network traffic monitoring system with advanced alert system"""
     
     def __init__(self, model=None, buffer_size=1000):
         """
@@ -51,11 +74,20 @@ class RealTimeMonitor:
         self.event_buffer = deque(maxlen=buffer_size)
         self.alert_queue = queue.Queue()
         self.monitoring_active = False
+        self.alerts_enabled = True
+        self.sound_enabled = True
+        self.last_alert_time = datetime.now()
+        self.alert_cooldown = 30  # seconds between alerts
+        
         self.stats = {
             'total_events': 0,
             'threats_detected': 0,
             'last_update': datetime.now(),
-            'alerts': []
+            'alerts': [],
+            'critical_alerts': 0,
+            'high_alerts': 0,
+            'medium_alerts': 0,
+            'low_alerts': 0
         }
         
     def start_monitoring(self):
@@ -197,22 +229,30 @@ class RealTimeMonitor:
                 class_names = ['dos', 'normal', 'probe', 'r2l', 'u2r']
                 predicted_class = class_names[prediction] if prediction < len(class_names) else 'unknown'
                 
-                # If threat detected, create alert
+                # If threat detected, trigger alert
                 if predicted_class != 'normal' and confidence > 0.7:
-                    alert = {
-                        'timestamp': event.timestamp,
-                        'threat_type': predicted_class,
-                        'confidence': confidence,
-                        'source_ip': event.source_ip,
-                        'dest_ip': event.dest_ip,
-                        'port': event.port,
-                        'severity': self._get_severity(predicted_class),
-                        'description': self._get_threat_description(predicted_class)
-                    }
+                    severity_str = self._get_severity(predicted_class)
+                    severity = AlertSeverity(severity_str.lower())
                     
-                    self.alert_queue.put(alert)
+                    description = self._get_threat_description(predicted_class)
+                    
+                    # Trigger the alert with audio/visual notification
+                    self.trigger_alert(
+                        severity=severity,
+                        threat_type=predicted_class,
+                        source_ip=event.source_ip,
+                        dest_ip=event.dest_ip,
+                        description=description,
+                        confidence=confidence,
+                        details={
+                            'port': event.port,
+                            'protocol': event.protocol,
+                            'bytes_sent': event.bytes_sent,
+                            'bytes_received': event.bytes_received
+                        }
+                    )
+                    
                     self.stats['threats_detected'] += 1
-                    self.stats['alerts'].append(alert)
                     
                     # Keep only recent alerts (last 100)
                     if len(self.stats['alerts']) > 100:
@@ -246,6 +286,113 @@ class RealTimeMonitor:
     def get_recent_events(self, count: int = 50) -> List[NetworkEvent]:
         """Get recent network events"""
         return list(self.event_buffer)[-count:]
+    
+    def trigger_alert(self, severity: AlertSeverity, threat_type: str, source_ip: str, 
+                     dest_ip: str, description: str, confidence: float, details: Dict = None):
+        """Trigger a security alert with audio/visual notifications"""
+        if not self.alerts_enabled:
+            return
+            
+        # Check cooldown to avoid alert spam
+        current_time = datetime.now()
+        if (current_time - self.last_alert_time).seconds < self.alert_cooldown:
+            return
+            
+        # Create alert
+        alert = SecurityAlert(
+            timestamp=current_time,
+            severity=severity,
+            threat_type=threat_type,
+            source_ip=source_ip,
+            dest_ip=dest_ip,
+            description=description,
+            confidence=confidence,
+            details=details or {}
+        )
+        
+        # Add to alert queue and stats
+        self.alert_queue.put(alert)
+        self.stats['alerts'].append({
+            'timestamp': alert.timestamp,
+            'severity': severity.value.upper(),
+            'threat_type': threat_type,
+            'source_ip': source_ip,
+            'dest_ip': dest_ip,
+            'description': description,
+            'confidence': confidence
+        })
+        
+        # Update severity counters
+        if severity == AlertSeverity.CRITICAL:
+            self.stats['critical_alerts'] += 1
+        elif severity == AlertSeverity.HIGH:
+            self.stats['high_alerts'] += 1
+        elif severity == AlertSeverity.MEDIUM:
+            self.stats['medium_alerts'] += 1
+        elif severity == AlertSeverity.LOW:
+            self.stats['low_alerts'] += 1
+        
+        # Trigger audio alert
+        if self.sound_enabled:
+            self._play_alert_sound(severity)
+        
+        # Update last alert time
+        self.last_alert_time = current_time
+        
+        # Log the alert
+        print(f"🚨 ALERT: {severity.value.upper()} - {threat_type} from {source_ip} to {dest_ip}")
+    
+    def _play_alert_sound(self, severity: AlertSeverity):
+        """Play audio alert based on severity"""
+        try:
+            if platform.system() == "Windows":
+                # Windows system sounds
+                if severity == AlertSeverity.CRITICAL:
+                    winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)  # Critical alert
+                elif severity == AlertSeverity.HIGH:
+                    winsound.MessageBeep(winsound.MB_ICONHAND)  # Error sound
+                elif severity == AlertSeverity.MEDIUM:
+                    winsound.MessageBeep(winsound.MB_ICONQUESTION)  # Warning sound
+                elif severity == AlertSeverity.LOW:
+                    winsound.MessageBeep(winsound.MB_OK)  # Information sound
+            else:
+                # Linux/Mac - use system commands
+                if severity == AlertSeverity.CRITICAL:
+                    subprocess.run(['paplay', '/usr/share/sounds/alsa/Front_Left.wav'], capture_output=True)
+                elif severity in [AlertSeverity.HIGH, AlertSeverity.MEDIUM]:
+                    subprocess.run(['paplay', '/usr/share/sounds/alsa/Front_Right.wav'], capture_output=True)
+                else:
+                    subprocess.run(['paplay', '/usr/share/sounds/alsa/Rear_Left.wav'], capture_output=True)
+        except Exception as e:
+            # Fallback to console bell if audio fails
+            print('\a')  # Terminal bell
+            print(f"Audio alert failed: {e}")
+    
+    def enable_alerts(self, enabled: bool = True):
+        """Enable or disable alerts"""
+        self.alerts_enabled = enabled
+        print(f"Alerts {'enabled' if enabled else 'disabled'}")
+    
+    def enable_sound(self, enabled: bool = True):
+        """Enable or disable sound alerts"""
+        self.sound_enabled = enabled
+        print(f"Sound alerts {'enabled' if enabled else 'disabled'}")
+    
+    def set_alert_cooldown(self, seconds: int):
+        """Set cooldown period between alerts"""
+        self.alert_cooldown = seconds
+        print(f"Alert cooldown set to {seconds} seconds")
+    
+    def get_alert_summary(self) -> Dict:
+        """Get summary of recent alerts"""
+        return {
+            'total_alerts': len(self.stats['alerts']),
+            'critical': self.stats['critical_alerts'],
+            'high': self.stats['high_alerts'],
+            'medium': self.stats['medium_alerts'],
+            'low': self.stats['low_alerts'],
+            'last_alert': self.stats['alerts'][-1] if self.stats['alerts'] else None
+        }
         
     def get_recent_alerts(self, count: int = 20) -> List[Dict]:
         """Get recent security alerts"""

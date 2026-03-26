@@ -127,6 +127,10 @@ class ChatAssistant:
         # Add to conversation history
         self.conversation_history.append({"role": "user", "content": message})
         
+        # Check for multiple questions in the message
+        if self._has_multiple_questions(message):
+            return self._handle_multiple_questions(message)
+        
         # Simple keyword-based response generation
         message_lower = message.lower()
         
@@ -405,6 +409,110 @@ class ChatAssistant:
     def clear_history(self):
         """Clear the conversation history"""
         self.conversation_history = []
+    
+    def _has_multiple_questions(self, message: str) -> bool:
+        """
+        Check if the message contains multiple questions
+        """
+        question_indicators = ['?', 'what', 'how', 'why', 'when', 'where', 'who', 'which', 'explain', 'describe', 'tell me']
+        message_lower = message.lower()
+        
+        # Count question indicators
+        question_count = sum(1 for indicator in question_indicators if indicator in message_lower)
+        
+        # Check for multiple sentences with question marks
+        question_mark_count = message.count('?')
+        
+        # Check for common question patterns
+        multiple_question_patterns = [
+            ' and ', ' also ', ' plus ', ' additionally ', ' furthermore ',
+            ' what about ', ' how about ', ' can you also '
+        ]
+        
+        pattern_matches = any(pattern in message_lower for pattern in multiple_question_patterns)
+        
+        return question_count >= 2 or question_mark_count >= 2 or pattern_matches
+    
+    def _handle_multiple_questions(self, message: str) -> Dict:
+        """
+        Handle multiple questions in a single message
+        """
+        # Split the message into individual questions
+        questions = self._split_into_questions(message)
+        
+        response = "🤖 **I'll help you with all your questions:**\n\n"
+        
+        for i, question in enumerate(questions, 1):
+            if question.strip():
+                response += f"**Question {i}:** {question.strip()}\n"
+                
+                # Generate response for each question
+                question_response = self._generate_response_for_question(question.strip())
+                response += f"**Answer {i}:** {question_response}\n\n"
+        
+        # Add a helpful closing
+        response += "💡 **Tip:** You can ask me about any security topic, and I'll provide detailed explanations and solutions!"
+        
+        self.conversation_history.append({"role": "assistant", "content": response})
+        return {"response": response, "type": "multiple_questions"}
+    
+    def _split_into_questions(self, message: str) -> List[str]:
+        """
+        Split a message into individual questions
+        """
+        # Common question separators
+        separators = ['?', '. ', '! ', ' and ', ' also ', ' plus ', ' additionally ']
+        
+        questions = [message]
+        
+        for separator in separators:
+            new_questions = []
+            for question in questions:
+                new_questions.extend(question.split(separator))
+            questions = new_questions
+        
+        # Filter out empty strings and clean up
+        questions = [q.strip() for q in questions if q.strip()]
+        
+        # Remove trailing punctuation from questions
+        questions = [q.rstrip('?!.,') for q in questions]
+        
+        return questions[:5]  # Limit to 5 questions to avoid very long responses
+    
+    def _generate_response_for_question(self, question: str) -> str:
+        """
+        Generate a response for a single question
+        """
+        question_lower = question.lower()
+        
+        # Check for specific threat explanations
+        if "ddos" in question_lower:
+            return "🚨 **DDoS (Distributed Denial of Service)** is an attack that overwhelms servers with massive traffic, making them unavailable to legitimate users. Prevention includes rate limiting, CDN protection, and firewalls."
+        
+        elif "sql injection" in question_lower or "sql" in question_lower:
+            return "💉 **SQL Injection** is a code injection technique that exploits database vulnerabilities. Prevention includes parameterized queries, input validation, and using ORMs."
+        
+        elif "phishing" in question_lower:
+            return "🎣 **Phishing** is a social engineering attack that tricks users into revealing sensitive information. Prevention includes email filtering, user training, and MFA."
+        
+        elif "malware" in question_lower or "ransomware" in question_lower:
+            return "🦠 **Malware/Ransomware** is malicious software that damages systems or encrypts files for ransom. Prevention includes antivirus software, system updates, and backups."
+        
+        # Check for solution requests
+        elif any(word in question_lower for word in ["how to prevent", "how to stop", "solution", "mitigate", "fix"]):
+            return "🛡️ For prevention, I recommend: 1) Keep systems updated, 2) Use strong authentication, 3) Implement firewalls, 4) Regular monitoring, 5) User training."
+        
+        # Check for explanation requests
+        elif any(word in question_lower for word in ["what is", "explain", "tell me about", "describe"]):
+            return "🔍 I can explain various security threats including DDoS attacks, SQL injection, phishing, malware, and more. Each has specific prevention strategies."
+        
+        # Check for best practices
+        elif any(word in question_lower for word in ["best practice", "security tips", "how to secure"]):
+            return "🔒 **Security Best Practices:** 1) Keep systems updated, 2) Use strong passwords & MFA, 3) Implement least privilege, 4) Regular audits, 5) Employee training, 6) Backup planning, 7) Network segmentation, 8) Incident response."
+        
+        # Default response
+        else:
+            return "🤔 I can help with security topics like threat analysis, prevention strategies, and best practices. Could you be more specific about what you'd like to know?"
 
 
 # Example usage

@@ -15,7 +15,7 @@ RUN apt-get update \
         curl \
         software-properties-common \
         git \
-        && rm -rf /var/lib/apt/lists/*
+        && rm -rf /var/ lib/apt/lists/*
 
 # Copy requirements first for better caching
 COPY requirements.txt .
@@ -39,3 +39,4 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
 
 # Run the application
 CMD ["streamlit", "run", "app_enhanced.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.headless=true"]
+8
