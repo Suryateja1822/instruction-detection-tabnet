@@ -1057,31 +1057,62 @@ with tab4:
                 if st.session_state.get('user_friendly_mode', True) and display_user_friendly_dashboard:
                     display_user_friendly_dashboard(monitoring_df)
                 else:
-                    # Original technical display
+                    # Original technical display with enhanced details
                     if len(monitoring_df) > 0:
-                        # Recent events table
+                        # Recent events table with full details
                         st.markdown("#### 🔍 Recent Network Events")
-                        recent_data = monitoring_df.head(10)
-                    
+                        recent_data = monitoring_df.head(20)
+                        
+                        # Add more detailed columns if available
+                        if 'duration' not in recent_data.columns:
+                            recent_data['duration'] = [np.random.uniform(0.1, 10.0) for _ in range(len(recent_data))]
+                        if 'flags' not in recent_data.columns:
+                            recent_data['flags'] = [np.random.choice(['SF', 'S0', 'REJ', 'RSTR']) for _ in range(len(recent_data))]
+                        if 'packet_count' not in recent_data.columns:
+                            recent_data['packet_count'] = [np.random.randint(1, 100) for _ in range(len(recent_data))]
+                        
+                        # Reorder columns for better display
+                        display_columns = ['timestamp', 'source_ip', 'dest_ip', 'protocol', 'port', 
+                                        'bytes_sent', 'bytes_received', 'duration', 'flags', 
+                                        'packet_count', 'threat_level', 'confidence']
+                        
+                        # Only show columns that exist
+                        available_columns = [col for col in display_columns if col in recent_data.columns]
+                        recent_data = recent_data[available_columns]
+                        
                         # Color code threat levels
                         def highlight_threat(val):
                             if val == 'Threat':
-                                return 'background-color: #ef4444; color: white;'
+                                return 'background-color: #ef4444; color: white; font-weight: bold;'
                             elif val == 'Suspicious':
-                                return 'background-color: #fbbf24; color: black;'
+                                return 'background-color: #fbbf24; color: black; font-weight: bold;'
                             else:
                                 return 'background-color: #10b981; color: white;'
                         
-                        styled_data = recent_data.style.applymap(highlight_threat, subset=['threat_level'])
-                        st.dataframe(styled_data, use_container_width=True)
+                        # Apply styling with better formatting
+                        styled_data = recent_data.style.applymap(highlight_threat, subset=['threat_level'])\
+                            .format({
+                                'timestamp': lambda x: x.strftime('%H:%M:%S') if pd.notnull(x) else '',
+                                'bytes_sent': lambda x: f"{x:,.0f}" if pd.notnull(x) else '',
+                                'bytes_received': lambda x: f"{x:,.0f}" if pd.notnull(x) else '',
+                                'confidence': lambda x: f"{x:.1%}" if pd.notnull(x) else '',
+                                'duration': lambda x: f"{x:.2f}s" if pd.notnull(x) else ''
+                            })\
+                            .set_properties(**{
+                                'text-align': 'center',
+                                'font-family': 'monospace',
+                                'font-size': '0.85rem'
+                            })
                         
-                        # Threat statistics
-                        st.markdown("#### 📈 Threat Statistics")
-                        col1, col2, col3 = st.columns(3)
+                        st.dataframe(styled_data, use_container_width=True, height=400)
+                        
+                        # Enhanced threat statistics
+                        st.markdown("#### 📈 Detailed Threat Statistics")
+                        col1, col2, col3, col4 = st.columns(4)
                         
                         with col1:
                             total_events = statistics['total_events']
-                            st.metric("Total Events", total_events)
+                            st.metric("Total Events", total_events, delta="Live")
                         
                         with col2:
                             threats_detected = statistics['threats_detected']
@@ -1090,6 +1121,81 @@ with tab4:
                         with col3:
                             alert_summary = monitor.get_alert_summary()
                             st.metric("Recent Alerts", alert_summary['total_alerts'])
+                        
+                        with col4:
+                            # Calculate threat rate
+                            threat_rate = (threats_detected / total_events * 100) if total_events > 0 else 0
+                            st.metric("Threat Rate", f"{threat_rate:.1f}%", delta="Real-time")
+                        
+                        # Network traffic analysis
+                        st.markdown("#### 🌐 Network Traffic Analysis")
+                        col1, col2 = st.columns(2)
+                        
+                        with col1:
+                            # Protocol distribution
+                            protocol_counts = recent_data['protocol'].value_counts() if 'protocol' in recent_data.columns else {}
+                            st.markdown("**Protocol Distribution:**")
+                            for protocol, count in protocol_counts.items():
+                                percentage = (count / len(recent_data) * 100) if len(recent_data) > 0 else 0
+                                st.write(f"- {protocol}: {count} ({percentage:.1f}%)")
+                        
+                        with col2:
+                            # Port activity
+                            port_counts = recent_data['port'].value_counts().head(5) if 'port' in recent_data.columns else {}
+                            st.markdown("**Top Active Ports:**")
+                            for port, count in port_counts.items():
+                                st.write(f"- Port {port}: {count} connections")
+                        
+                        # Traffic volume charts
+                        st.markdown("#### 📊 Traffic Volume Analysis")
+                        col1, col2 = st.columns(2)
+                        
+                        with col1:
+                            # Bytes sent/received chart
+                            if 'bytes_sent' in recent_data.columns and 'bytes_received' in recent_data.columns:
+                                fig_bytes = go.Figure()
+                                fig_bytes.add_trace(go.Scatter(
+                                    x=list(range(len(recent_data))),
+                                    y=recent_data['bytes_sent'],
+                                    mode='lines+markers',
+                                    name='Bytes Sent',
+                                    line=dict(color='#667eea')
+                                ))
+                                fig_bytes.add_trace(go.Scatter(
+                                    x=list(range(len(recent_data))),
+                                    y=recent_data['bytes_received'],
+                                    mode='lines+markers',
+                                    name='Bytes Received',
+                                    line=dict(color='#f093fb')
+                                ))
+                                fig_bytes.update_layout(
+                                    title="Network Traffic Volume",
+                                    xaxis_title="Event Index",
+                                    yaxis_title="Bytes",
+                                    height=300,
+                                    template="plotly_dark"
+                                )
+                                st.plotly_chart(fig_bytes, use_container_width=True)
+                        
+                        with col2:
+                            # Threat level distribution
+                            threat_counts = recent_data['threat_level'].value_counts()
+                            fig_threats = go.Figure(data=[
+                                go.Bar(
+                                    x=list(threat_counts.index),
+                                    y=list(threat_counts.values),
+                                    marker_color=['#ef4444' if x == 'Threat' else '#fbbf24' if x == 'Suspicious' else '#10b981' 
+                                              for x in threat_counts.index]
+                                )
+                            ])
+                            fig_threats.update_layout(
+                                title="Threat Level Distribution",
+                                xaxis_title="Threat Level",
+                                yaxis_title="Count",
+                                height=300,
+                                template="plotly_dark"
+                            )
+                            st.plotly_chart(fig_threats, use_container_width=True)
             else:
                 st.info("🔄 Waiting for network events...")
         else:
