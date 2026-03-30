@@ -1322,6 +1322,281 @@ with tab4:
                                 latest_events = recent_data.tail(5)
                                 threat_rate_latest = (len(latest_events[latest_events['threat_level'] == 'Threat']) / len(latest_events)) * 100
                                 st.write(f"- **Recent threat rate**: {threat_rate_latest:.1f}% (last 5 events)")
+                        
+                        # Advanced Visualization Section
+                        st.markdown("#### 📊 Advanced Network Visualizations")
+                        col1, col2 = st.columns(2)
+                        
+                        with col1:
+                            # Geographic Location Analysis
+                            st.markdown("**🌍 Geographic Threat Distribution:**")
+                            
+                            # Extract location info from IP addresses
+                            def get_location_from_ip(ip):
+                                # Simple location mapping based on IP ranges
+                                if ip.startswith('192.168.'):
+                                    return 'Internal Network'
+                                elif ip.startswith('10.'):
+                                    return 'Private Network'
+                                elif ip.startswith('172.'):
+                                    return 'Private Network'
+                                elif ip.startswith('127.'):
+                                    return 'Localhost'
+                                else:
+                                    # Simulate external locations
+                                    locations = ['North America', 'Europe', 'Asia', 'South America', 'Africa']
+                                    return np.random.choice(locations)
+                            
+                            # Create location data
+                            source_locations = [get_location_from_ip(ip) for ip in recent_data['source_ip']]
+                            dest_locations = [get_location_from_ip(ip) for ip in recent_data['dest_ip']]
+                            
+                            location_data = pd.DataFrame({
+                                'Source Location': source_locations,
+                                'Destination Location': dest_locations,
+                                'Threat Level': recent_data['threat_level']
+                            })
+                            
+                            # Location threat analysis
+                            location_threats = location_data[location_data['Threat Level'] == 'Threat']
+                            if len(location_threats) > 0:
+                                source_loc_counts = location_threats['Source Location'].value_counts()
+                                dest_loc_counts = location_threats['Destination Location'].value_counts()
+                                
+                                fig_location = go.Figure()
+                                fig_location.add_trace(go.Bar(
+                                    x=source_loc_counts.index,
+                                    y=source_loc_counts.values,
+                                    name='Threat Sources',
+                                    marker_color='#dc2626'
+                                ))
+                                fig_location.add_trace(go.Bar(
+                                    x=dest_loc_counts.index,
+                                    y=dest_loc_counts.values,
+                                    name='Threat Targets',
+                                    marker_color='#f59e0b'
+                                ))
+                                
+                                fig_location.update_layout(
+                                    title='Threats by Geographic Location',
+                                    xaxis_title='Location',
+                                    yaxis_title='Threat Count',
+                                    barmode='group',
+                                    height=350,
+                                    template="plotly_dark"
+                                )
+                                
+                                st.plotly_chart(fig_location, use_container_width=True)
+                            else:
+                                st.info("🌍 No threats detected for geographic analysis")
+                            
+                            # Protocol vs Threat Analysis
+                            st.markdown("**🔗 Protocol Threat Analysis:**")
+                            protocol_threat_matrix = pd.crosstab(
+                                recent_data['protocol'], 
+                                recent_data['threat_level'],
+                                margins=True
+                            )
+                            
+                            if len(protocol_threat_matrix) > 1:
+                                fig_protocol = go.Figure()
+                                protocols = protocol_threat_matrix.index[:-1]  # Exclude 'All' row
+                                
+                                for threat_level in ['Normal', 'Suspicious', 'Threat']:
+                                    if threat_level in protocol_threat_matrix.columns:
+                                        fig_protocol.add_trace(go.Bar(
+                                            x=protocols,
+                                            y=protocol_threat_matrix[threat_level][:-1],  # Exclude 'All' column
+                                            name=threat_level,
+                                            marker_color={
+                                                'Normal': '#10b981',
+                                                'Suspicious': '#f59e0b',
+                                                'Threat': '#dc2626'
+                                            }.get(threat_level, '#667eea')
+                                        ))
+                                
+                                fig_protocol.update_layout(
+                                    title='Protocol vs Threat Level Analysis',
+                                    xaxis_title='Protocol',
+                                    yaxis_title='Event Count',
+                                    barmode='stack',
+                                    height=300,
+                                    template="plotly_dark"
+                                )
+                                
+                                st.plotly_chart(fig_protocol, use_container_width=True)
+                        
+                        with col2:
+                            # Port-Based Threat Analysis
+                            st.markdown("**🚪 Port Threat Analysis:**")
+                            
+                            # Group ports by common services
+                            def categorize_port(port):
+                                if port in [80, 443, 8080]:
+                                    return 'Web Services'
+                                elif port in [22, 23]:
+                                    return 'Remote Access'
+                                elif port in [25, 587, 465, 110, 995]:
+                                    return 'Email Services'
+                                elif port in [53]:
+                                    return 'DNS'
+                                elif port in [20, 21]:
+                                    return 'FTP'
+                                elif port in [3306, 5432, 1433]:
+                                    return 'Database'
+                                else:
+                                    return 'Other Services'
+                            
+                            recent_data['port_category'] = recent_data['port'].apply(categorize_port)
+                            port_threat_data = recent_data[recent_data['threat_level'] == 'Threat']
+                            
+                            if len(port_threat_data) > 0:
+                                port_category_counts = port_threat_data['port_category'].value_counts()
+                                
+                                fig_port = go.Figure(data=[
+                                    go.Pie(
+                                        labels=port_category_counts.index,
+                                        values=port_category_counts.values,
+                                        hole=0.3,
+                                        marker_colors=['#dc2626', '#f59e0b', '#10b981', '#667eea', '#f093fb', '#8b5cf6']
+                                    )
+                                ])
+                                
+                                fig_port.update_layout(
+                                    title='Threat Distribution by Service Type',
+                                    height=350,
+                                    template="plotly_dark",
+                                    showlegend=True
+                                )
+                                
+                                st.plotly_chart(fig_port, use_container_width=True)
+                            else:
+                                st.info("🚪 No threats detected for port analysis")
+                            
+                            # Time-based Threat Pattern
+                            st.markdown("**⏰ Time-Based Threat Pattern:**")
+                            
+                            # Extract hour from timestamp
+                            recent_data['hour'] = pd.to_datetime(recent_data['timestamp']).dt.hour
+                            hourly_threats = recent_data.groupby('hour')['threat_level'].value_counts().unstack(fill_value=0)
+                            
+                            if len(hourly_threats) > 0:
+                                fig_time = go.Figure()
+                                
+                                for threat_level in ['Threat', 'Suspicious', 'Normal']:
+                                    if threat_level in hourly_threats.columns:
+                                        fig_time.add_trace(go.Scatter(
+                                            x=hourly_threats.index,
+                                            y=hourly_threats[threat_level],
+                                            mode='lines+markers',
+                                            name=threat_level,
+                                            line=dict(
+                                                color={
+                                                    'Threat': '#dc2626',
+                                                    'Suspicious': '#f59e0b',
+                                                    'Normal': '#10b981'
+                                                }.get(threat_level, '#667eea'),
+                                                width=2
+                                            ),
+                                            marker=dict(size=6)
+                                        ))
+                                
+                                fig_time.update_layout(
+                                    title='Threat Pattern by Hour of Day',
+                                    xaxis_title='Hour',
+                                    yaxis_title='Event Count',
+                                    height=300,
+                                    template="plotly_dark"
+                                )
+                                
+                                st.plotly_chart(fig_time, use_container_width=True)
+                        
+                        # Comprehensive Statistics Dashboard
+                        st.markdown("#### 📈 Comprehensive Statistics Dashboard")
+                        
+                        # Create summary statistics
+                        stats_col1, stats_col2, stats_col3, stats_col4 = st.columns(4)
+                        
+                        with stats_col1:
+                            # Attack Type Distribution
+                            st.markdown("**🎯 Attack Types:**")
+                            attack_types = recent_data['threat_level'].value_counts()
+                            for attack_type, count in attack_types.items():
+                                percentage = (count / len(recent_data)) * 100
+                                color = {
+                                    'Threat': '🔴',
+                                    'Suspicious': '🟡',
+                                    'Normal': '🟢'
+                                }.get(attack_type, '⚪')
+                                st.write(f"{color} {attack_type}: {count} ({percentage:.1f}%)")
+                        
+                        with stats_col2:
+                            # Protocol Distribution
+                            st.markdown("**🔗 Protocol Usage:**")
+                            protocol_dist = recent_data['protocol'].value_counts()
+                            for protocol, count in protocol_dist.items():
+                                percentage = (count / len(recent_data)) * 100
+                                st.write(f"📡 {protocol}: {count} ({percentage:.1f}%)")
+                        
+                        with stats_col3:
+                            # Port Category Distribution
+                            st.markdown("**🚪 Service Categories:**")
+                            port_dist = recent_data['port_category'].value_counts()
+                            for category, count in port_dist.items():
+                                percentage = (count / len(recent_data)) * 100
+                                st.write(f"🔌 {category}: {count} ({percentage:.1f}%)")
+                        
+                        with stats_col4:
+                            # Location Distribution
+                            st.markdown("**🌍 Location Sources:**")
+                            location_dist = pd.Series(source_locations).value_counts()
+                            for location, count in location_dist.items():
+                                percentage = (count / len(recent_data)) * 100
+                                st.write(f"📍 {location}: {count} ({percentage:.1f}%)")
+                        
+                        # Advanced Metrics
+                        st.markdown("#### 🎯 Advanced Security Metrics")
+                        
+                        metrics_col1, metrics_col2, metrics_col3 = st.columns(3)
+                        
+                        with metrics_col1:
+                            # Threat Severity Score
+                            threat_events = recent_data[recent_data['threat_level'] == 'Threat']
+                            severity_score = 0
+                            if len(threat_events) > 0:
+                                # Calculate severity based on confidence and volume
+                                avg_confidence = threat_events['confidence'].mean()
+                                threat_volume = len(threat_events) / len(recent_data)
+                                severity_score = (avg_confidence * threat_volume) * 100
+                            
+                            st.metric(
+                                "🚨 Threat Severity Score",
+                                f"{severity_score:.1f}",
+                                delta="High" if severity_score > 50 else "Low"
+                            )
+                        
+                        with metrics_col2:
+                            # Network Health Index
+                            normal_events = recent_data[recent_data['threat_level'] == 'Normal']
+                            health_index = (len(normal_events) / len(recent_data)) * 100 if len(recent_data) > 0 else 0
+                            
+                            health_status = "Excellent" if health_index >= 90 else "Good" if health_index >= 75 else "Fair" if health_index >= 60 else "Poor"
+                            st.metric(
+                                "💚 Network Health Index",
+                                f"{health_index:.1f}%",
+                                delta=health_status
+                            )
+                        
+                        with metrics_col3:
+                            # Alert Frequency
+                            alert_frequency = len(recent_data[recent_data['threat_level'].isin(['Threat', 'Suspicious'])])
+                            frequency_rate = (alert_frequency / len(recent_data)) * 100 if len(recent_data) > 0 else 0
+                            
+                            st.metric(
+                                "⚠️ Alert Frequency",
+                                f"{frequency_rate:.1f}%",
+                                delta="High" if frequency_rate > 20 else "Normal"
+                            )
             else:
                 st.info("🔄 Waiting for network events...")
         else:
