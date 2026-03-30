@@ -1,18 +1,39 @@
+# Core Streamlit
+streamlit>=1.28.0
+
+# Machine Learning
 pytorch-tabnet>=4.0.0
-torch>=1.9.0
-numpy>=1.20.0
-pandas>=1.3.0
-scikit-learn>=0.24.0
-matplotlib>=3.4.0
-seaborn>=0.11.0
-jupyter>=1.0.0
-ipykernel>=6.0.0
+torch>=2.0.0
+numpy>=1.24.0
+pandas>=2.0.0
+scikit-learn>=1.3.0
+
+# Data Visualization
+plotly>=5.15.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Audio/Alert System
+winsound>=1.0; sys_platform == "win32"
+
+# Data Processing
+openpyxl>=3.1.0
+xlrd>=2.0.0
+
+# Explainability
+shap>=0.42.0
+
+# Optimization
+optuna>=3.0.0
+scipy>=1.9.0
+
+# Utilities
 tqdm>=4.60.0
 python-dotenv>=0.19.0
-streamlit>=1.20.0
 pyyaml>=6.0
 imbalanced-learn>=0.10.0
-shap>=0.42.0
-optuna>=3.0.0
-plotly>=5.14.0
-scipy>=1.9.0
+joblib>=1.3.0
+
+# Development (can be removed in production)
+jupyter>=1.0.0
+ipykernel>=6.0.0

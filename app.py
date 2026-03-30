@@ -64,16 +64,22 @@ except ImportError:
 
 # Page configuration
 st.set_page_config(
-    page_title="TabNet-IDS - Advanced Threat Detection",
+    page_title="TabNet-IDS - Security Monitor",
     page_icon="🔒",
     layout="wide",
     initial_sidebar_state="expanded",
     menu_items={
-        'Get Help': 'https://github.com/yourusername/tabnet-ids',
-        'Report a bug': 'https://github.com/yourusername/tabnet-ids/issues',
-        'About': "# TabNet-IDS\nAdvanced Network Intrusion Detection System\n\nPowered by TabNet and Streamlit"
+        'Get Help': 'https://github.com/Suryateja1822/instruction-detection-tabnet',
+        'Report a bug': 'https://github.com/Suryateja1822/instruction-detection-tabnet/issues',
+        'About': "# TabNet-IDS\nAdvanced Network Intrusion Detection System\n\n🚀 Real-time threat detection with AI-powered analysis\n\n📊 User-friendly security monitoring"
     }
 )
+
+# Cloud optimization
+if os.getenv("STREAMLIT_CLOUD"):
+    # Optimize for cloud deployment
+    st.set_option('deprecation.showfileUploaderEncoding', False)
+    st.set_option('server.maxUploadSize', 200)
 
 # Initialize session state for chat
 if 'chat_assistant' not in st.session_state and ChatAssistant is not None:
@@ -89,23 +95,64 @@ st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap');
     
+    /* Force dark theme override */
     .stApp {
-        background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 50%, #0f1419 100%);
-        font-family: 'Rajdhani', sans-serif;
+        background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 50%, #0f1419 100%) !important;
+        font-family: 'Rajdhani', sans-serif !important;
     }
     
-    /* Hide sidebar completely or style it dark */
+    /* Main content area */
+    .main .block-container {
+        background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 50%, #0f1419 100%) !important;
+        color: #ffffff !important;
+    }
+    
+    /* Sidebar styling */
     section[data-testid="stSidebar"] {
-        background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
-        border-right: 1px solid rgba(102, 126, 234, 0.2);
+        background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%) !important;
+        border-right: 1px solid rgba(102, 126, 234, 0.2) !important;
     }
     
     section[data-testid="stSidebar"] > div {
-        background: transparent;
+        background: transparent !important;
     }
     
-    /* Style sidebar text */
+    /* All sidebar text */
     section[data-testid="stSidebar"] * {
+        color: #e0e7ff !important;
+    }
+    
+    /* Override any light theme elements */
+    .streamlit-container {
+        background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 50%, #0f1419 100%) !important;
+    }
+    
+    /* Headers and text */
+    h1, h2, h3, h4, h5, h6 {
+        color: #ffffff !important;
+    }
+    
+    p, div, span {
+        color: #e0e7ff !important;
+    }
+    
+    /* Dataframes and tables */
+    .dataframe {
+        background: #1a1f3a !important;
+        color: #ffffff !important;
+    }
+    
+    /* Metrics */
+    .metric-container {
+        background: #1a1f3a !important;
+        border: 1px solid rgba(102, 126, 234, 0.3) !important;
+    }
+    
+    .metric-value {
+        color: #ffffff !important;
+    }
+    
+    .metric-label {
         color: #e0e7ff !important;
     }
     
@@ -113,6 +160,71 @@ st.markdown("""
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
+    
+    /* Buttons and inputs */
+    .stButton > button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: #ffffff !important;
+        border: none !important;
+        font-weight: 600 !important;
+    }
+    
+    .stButton > button:hover {
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%) !important;
+    }
+    
+    /* Text inputs */
+    .stTextInput > div > div > input {
+        background: #1a1f3a !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(102, 126, 234, 0.3) !important;
+    }
+    
+    /* Select boxes */
+    .stSelectbox > div > div > select {
+        background: #1a1f3a !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(102, 126, 234, 0.3) !important;
+    }
+    
+    /* Checkboxes */
+    .stCheckbox > div {
+        color: #e0e7ff !important;
+    }
+    
+    /* Sliders */
+    .stSlider > div > div > div {
+        background: #1a1f3a !important;
+    }
+    
+    /* Tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        background: #1a1f3a !important;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        color: #e0e7ff !important;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background: #667eea !important;
+        color: #ffffff !important;
+    }
+    
+    /* Expander */
+    .streamlit-expanderHeader {
+        background: #1a1f3a !important;
+        color: #e0e7ff !important;
+    }
+    
+    /* Alert containers */
+    .element-container {
+        background: transparent !important;
+    }
+    
+    .block-container {
+        background: transparent !important;
+    }
     
     .executive-header {
         font-family: 'Orbitron', sans-serif;
@@ -918,8 +1030,9 @@ with tab4:
         if st.session_state.monitoring_active and 'real_time_monitor' in st.session_state:
             monitor = st.session_state.real_time_monitor
             
-            # Get real monitoring data
-            recent_events = monitor.get_recent_events(20)
+            # Get real monitoring data (optimized for cloud)
+            max_events = 20 if os.getenv("STREAMLIT_CLOUD") else 50
+            recent_events = monitor.get_recent_events(max_events)
             statistics = monitor.get_statistics()
             
             # Convert events to DataFrame for display
